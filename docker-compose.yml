@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    networks:
+      - app-network
+
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: supabase
+      POSTGRES_PASSWORD: your_secure_password
+      POSTGRES_DB: postgres
+    volumes:
+      - ./supabase/volumes/db/data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  rest:
+    image: postgrest/postgrest
+    restart: always
+    environment:
+      PGRST_DB_URI: postgres://supabase:your_secure_password@db:5432/postgres
+      PGRST_DB_SCHEMA: public
+      PGRST_DB_ANON_ROLE: anon
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  studio:
+    image: supabase/studio
+    restart: always
+    ports:
+      - "54321:54321"
+    environment:
+      SUPABASE_URL: http://localhost:8000
+      SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiJ9.Z_ATc3_s-PA5x1B_G_M_f-4-g-s-E_A_T_c_I_E_s
+      SUPABASE_DB_HOST: db
+      SUPABASE_DB_PORT: 5432
+      SUPABASE_DB_USER: supabase
+      SUPABASE_DB_PASSWORD: your_secure_password
+      SUPABASE_DB_NAME: postgres
+    depends_on:
+      - db
+      - rest
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./supabase/volumes/db/data

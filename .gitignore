@@ -137,3 +137,62 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+
+# Dependencias de Node.js (en la carpeta frontend)
+/frontend/node_modules
+/frontend/dist
+
+# Archivos de logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Archivos de entorno local
+# Nunca subas archivos .env que puedan contener claves de API o contraseñas
+.env
+.env*.local
+
+# Directorios de configuración de IDEs
+.vscode/
+.idea/
+
+# Archivos generados por el sistema operativo
+.DS_Store
+Thumbs.db
+
+# Datos locales de Supabase
+# ¡IMPORTANTE! Ignora los volúmenes de la base de datos para no subir los datos del inventario al repositorio.
+/supabase/volumes/
+
+# Archivos de Docker que no deberían ser parte del repositorio principal
+docker-compose.override.yml
+
+
+
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
