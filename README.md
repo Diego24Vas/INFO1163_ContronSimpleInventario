@@ -1,5 +1,18 @@
-# INFO1163_ContronSimpleInventario
+
+Comandos para iniciar Supabase:
+
+
+Inicializar el proyecto Supabase:
+
+`npx supabase init`
 
 
 
-docker compose up --build
+Inicie la pila Supabase:
+
+`npx supabase start`
+
+
+Terminar la pila Supabase:
+
+`npx supabase stop`
