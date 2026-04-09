@@ -294,3 +294,66 @@ code {
     border-right-color: var(--border);
   }
 }
+
+/* PrimeVue Estilos Globales */
+@import 'primevue/resources/primevue.css';
+@import 'primevue/resources/themes/aura-light-blue/theme.css';
+@import 'primeicons/primeicons.css';
+
+/* Sobrescrituras personalizadas para PrimeVue */
+.p-button {
+  border-radius: 4px !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+}
+
+.p-button:hover {
+  transform: translateY(-2px) !important;
+}
+
+.p-inputtext,
+.p-textarea {
+  border-radius: 4px !important;
+  border: 1px solid #e0e0e0 !important;
+}
+
+.p-inputtext:focus,
+.p-textarea:focus {
+  border-color: #667eea !important;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1) !important;
+}
+
+.p-card {
+  border-radius: 8px !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+}
+
+.p-dialog .p-dialog-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+}
+
+.p-toast {
+  z-index: 9999;
+}
+
+.p-toast .p-toast-message {
+  border-radius: 4px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Animaciones suaves */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.p-toast-message {
+  animation: slideIn 0.3s ease-out !important;
+}
