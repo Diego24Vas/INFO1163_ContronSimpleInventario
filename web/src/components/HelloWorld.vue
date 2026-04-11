@@ -11,6 +11,7 @@ import InputNumber from 'primevue/inputnumber'
 import Dialog from 'primevue/dialog'
 import Toast from 'primevue/toast'
 import Tag from 'primevue/tag'
+import Card from 'primevue/card'
 
 const toast = useToast()
 
@@ -21,7 +22,6 @@ const productos = ref([
 ])
 
 // Variables para formularios
-const productDialog = ref(false)
 const movementDialog = ref(false)
 const product = ref({ nombre: '', stock: 0, categoria: '' })
 const selectedProduct = ref(null)
@@ -30,15 +30,10 @@ const tipoMovimiento = ref('')
 
 // --- FUNCIONES ---
 
-const openNew = () => {
-  product.value = { nombre: '', stock: 0, categoria: '' }
-  productDialog.value = true
-}
-
 const saveProduct = () => {
   if (product.value.nombre.trim()) {
     productos.value.push({ ...product.value, id: Date.now() })
-    productDialog.value = false
+    product.value = { nombre: '', stock: 0, categoria: '' }
     toast.add({ severity: 'success', summary: 'Registrado', detail: 'Producto añadido al inventario', life: 3000 })
   }
 }
@@ -81,8 +76,32 @@ const getStockSeverity = (stock) => {
         <h1>Gestión de Inventario</h1>
         <p>Control de stock y movimientos</p>
       </div>
-      <Button label="Nuevo Producto" icon="pi pi-plus" @click="openNew" class="p-button-outlined" />
     </div>
+
+    <Card class="custom-card mb-6">
+      <template #title>
+        <span class="card-title"><i class="pi pi-plus-circle"></i> Registrar Nuevo Producto</span>
+      </template>
+      <template #content>
+        <div class="horizontal-form">
+          <div class="field">
+            <label>Nombre</label>
+            <InputText v-model="product.nombre" placeholder="Nombre del ítem" />
+          </div>
+          <div class="field">
+            <label>Categoría</label>
+            <InputText v-model="product.categoria" placeholder="Categoría" />
+          </div>
+          <div class="field">
+            <label>Stock Inicial</label>
+            <InputNumber v-model="product.stock" :min="0" />
+          </div>
+          <div class="field align-self-end">
+            <Button label="Agregar al Inventario" icon="pi pi-plus" @click="saveProduct" class="p-button-sm" />
+          </div>
+        </div>
+      </template>
+    </Card>
 
     <div class="table-card">
       <DataTable :value="productos" responsiveLayout="scroll" class="p-datatable-minimal">
@@ -95,36 +114,16 @@ const getStockSeverity = (stock) => {
         </Column>
         <Column header="Movimientos" headerStyle="width: 10rem">
           <template #body="slotProps">
-            <div class="flex gap-2">
-              <Button icon="pi pi-plus" severity="success" text rounded @click="openMovement(slotProps.data, 'entrada')" v-tooltip="'Entrada'" />
-              <Button icon="pi pi-minus" severity="danger" text rounded @click="openMovement(slotProps.data, 'salida')" v-tooltip="'Salida'" />
+            <div class="movement-actions">
+              <Button label="Entrada" icon="pi pi-plus" class="btn-entrada" @click="openMovement(slotProps.data, 'entrada')" />
+              <Button label="Salida" icon="pi pi-minus" class="btn-salida" @click="openMovement(slotProps.data, 'salida')" />
             </div>
           </template>
         </Column>
       </DataTable>
     </div>
 
-    <Dialog v-model:visible="productDialog" header="Nuevo Producto" :modal="true" :draggable="false" class="minimal-dialog">
-      <div class="form-grid">
-        <div class="field">
-          <label for="name">Nombre</label>
-          <InputText id="name" v-model="product.nombre" autofocus class="w-full" />
-        </div>
-        <div class="field">
-          <label for="cat">Categoría</label>
-          <InputText id="cat" v-model="product.categoria" class="w-full" />
-        </div>
-        <div class="field">
-          <label for="stock">Stock Inicial</label>
-          <InputNumber id="stock" v-model="product.stock" class="w-full" />
-        </div>
-      </div>
-      <template #footer>
-        <Button label="Cancelar" text @click="productDialog = false" />
-        <Button label="Guardar Producto" @click="saveProduct" />
-      </template>
-    </Dialog>
-
+ 
     <Dialog v-model:visible="movementDialog" :header="'Registrar ' + tipoMovimiento" :modal="true" :draggable="false" class="minimal-dialog">
       <div class="movement-content">
         <p>Ajustando stock para: <strong>{{ selectedProduct?.nombre }}</strong></p>
@@ -141,6 +140,7 @@ const getStockSeverity = (stock) => {
 /* Contenedor que usa todo el ancho */
 .inventory-container {
   padding: 2rem 4rem;
+  background-color: #16171d;
   width: 100%;
   box-sizing: border-box;
 }
@@ -164,6 +164,24 @@ const getStockSeverity = (stock) => {
   margin-top: 0.5rem;
 }
 
+.custom-card {
+  background: #1f2028 !important; 
+  border: 1px solid #2e303a !important;
+  color: #f3f4f6 !important;
+  width: 100%; /* Asegura que ambas tarjetas midan lo mismo */
+}
+
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+
+.horizontal-form {
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+  flex-wrap: wrap; /* Para que sea responsivo si se achica la pantalla */
+}
+
 /* Tarjeta de la tabla */
 .table-card {
   background: var(--bg);
@@ -185,6 +203,33 @@ const getStockSeverity = (stock) => {
 :deep(.p-datatable-minimal .p-datatable-tbody > tr > td) {
   padding: 1rem;
   border-bottom: 1px solid var(--border);
+}
+
+.movement-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+:deep(.btn-entrada.p-button) {
+  background: #16a34a !important;
+  border-color: #16a34a !important;
+  color: #ffffff !important;
+}
+
+:deep(.btn-entrada.p-button:hover) {
+  background: #15803d !important;
+  border-color: #15803d !important;
+}
+
+:deep(.btn-salida.p-button) {
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
+  color: #ffffff !important;
+}
+
+:deep(.btn-salida.p-button:hover) {
+  background: #b91c1c !important;
+  border-color: #b91c1c !important;
 }
 
 /* Formularios */
