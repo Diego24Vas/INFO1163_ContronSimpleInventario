@@ -2,389 +2,219 @@
 import { ref } from 'vue'
 import { useToast } from 'primevue/usetoast'
 
+// Componentes PrimeVue
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import InputNumber from 'primevue/inputnumber'
-import Textarea from 'primevue/textarea'
-import Card from 'primevue/card'
-import Toast from 'primevue/toast'
 import Dialog from 'primevue/dialog'
-import ToggleButton from 'primevue/togglebutton'
+import Toast from 'primevue/toast'
+import Tag from 'primevue/tag'
 
 const toast = useToast()
 
-const nombre = ref('')
-const edad = ref(null)
-const mensaje = ref('')
-const showDialog = ref(false)
-const isActive = ref(false)
+// 1. Estado de los Productos (Visualizar Stock Actual)
+const productos = ref([
+  { id: 1, nombre: 'Producto A', stock: 10, categoria: 'Electrónica' },
+  { id: 2, nombre: 'Producto B', stock: 5, categoria: 'Oficina' }
+])
 
-const mostrarMensaje = () => {
-  if (nombre.value && edad.value) {
-    toast.add({ 
-      severity: 'success', 
-      summary: 'Éxito!', 
-      detail: `Hola ${nombre.value}, tienes ${edad.value} años`, 
-      life: 3000 
-    })
+// Variables para formularios
+const productDialog = ref(false)
+const movementDialog = ref(false)
+const product = ref({ nombre: '', stock: 0, categoria: '' })
+const selectedProduct = ref(null)
+const cantidadMovimiento = ref(0)
+const tipoMovimiento = ref('') 
+
+// --- FUNCIONES ---
+
+const openNew = () => {
+  product.value = { nombre: '', stock: 0, categoria: '' }
+  productDialog.value = true
+}
+
+const saveProduct = () => {
+  if (product.value.nombre.trim()) {
+    productos.value.push({ ...product.value, id: Date.now() })
+    productDialog.value = false
+    toast.add({ severity: 'success', summary: 'Registrado', detail: 'Producto añadido al inventario', life: 3000 })
+  }
+}
+
+const openMovement = (prod, tipo) => {
+  selectedProduct.value = prod
+  tipoMovimiento.value = tipo
+  cantidadMovimiento.value = 0
+  movementDialog.value = true
+}
+
+const applyMovement = () => {
+  const p = productos.value.find(x => x.id === selectedProduct.value.id)
+  if (tipoMovimiento.value === 'entrada') {
+    p.stock += cantidadMovimiento.value
   } else {
-    toast.add({ 
-      severity: 'warn', 
-      summary: 'Advertencia', 
-      detail: 'Por favor completa todos los campos', 
-      life: 3000 
-    })
+    if (p.stock >= cantidadMovimiento.value) {
+      p.stock -= cantidadMovimiento.value
+    } else {
+      return toast.add({ severity: 'error', summary: 'Error', detail: 'Stock insuficiente', life: 3000 })
+    }
   }
+  movementDialog.value = false
+  toast.add({ severity: 'info', summary: 'Actualizado', detail: `Se registró una ${tipoMovimiento.value}`, life: 3000 })
 }
 
-const mostrarMensajeError = () => {
-  toast.add({ 
-    severity: 'error', 
-    summary: 'Error', 
-    detail: 'Algo salió mal', 
-    life: 3000 
-  })
-}
-
-const mostrarDialogo = () => {
-  showDialog.value = true
-}
-
-const enviarMensaje = () => {
-  if (mensaje.value.trim()) {
-    toast.add({ 
-      severity: 'info', 
-      summary: 'Mensaje Enviado', 
-      detail: `Tu mensaje: "${mensaje.value}"`, 
-      life: 3000 
-    })
-    mensaje.value = ''
-    showDialog.value = false
-  }
-}
-
-const limpiarFormulario = () => {
-  nombre.value = ''
-  edad.value = null
-  mensaje.value = ''
-  isActive.value = false
-  toast.add({ 
-    severity: 'info', 
-    summary: 'Formulario Limpiado', 
-    detail: 'Todos los campos han sido resetados', 
-    life: 2000 
-  })
-}
-
-const cambiarEstadoToggle = (value) => {
-  const estado = value ? 'Activado' : 'Desactivado'
-  toast.add({ 
-    severity: 'info', 
-    summary: `Estado: ${estado}`, 
-    detail: `El toggle ha sido ${estado}`, 
-    life: 2000 
-  })
+const getStockSeverity = (stock) => {
+  if (stock > 5) return 'success'
+  if (stock > 0) return 'warning'
+  return 'danger'
 }
 </script>
 
 <template>
-  <div class="container">
+  <div class="inventory-container">
     <Toast />
     
-    <Card class="card-title">
-      <template #title>
-        <h1>Prueba de Componentes PrimeVue</h1>
-      </template>
-      <template #content>
-        <p>Bienvenido a la demostración de componentes PrimeVue con Vue 3</p>
-      </template>
-    </Card>
+    <div class="inventory-header">
+      <div class="header-content">
+        <h1>Gestión de Inventario</h1>
+        <p>Control de stock y movimientos</p>
+      </div>
+      <Button label="Nuevo Producto" icon="pi pi-plus" @click="openNew" class="p-button-outlined" />
+    </div>
 
-    <Card class="card-form">
-      <template #title>
-        <h2>Formulario de Prueba</h2>
-      </template>
-      <template #content>
-        <div class="form-group">
-          <label for="nombre" class="label">Nombre:</label>
-          <InputText 
-            id="nombre"
-            v-model="nombre" 
-            placeholder="Ingresa tu nombre"
-            class="input-field"
-          />
+    <div class="table-card">
+      <DataTable :value="productos" responsiveLayout="scroll" class="p-datatable-minimal">
+        <Column field="nombre" header="Nombre del Producto"></Column>
+        <Column field="categoria" header="Categoría"></Column>
+        <Column field="stock" header="Stock Actual">
+          <template #body="slotProps">
+            <Tag :value="slotProps.data.stock" :severity="getStockSeverity(slotProps.data.stock)" />
+          </template>
+        </Column>
+        <Column header="Movimientos" headerStyle="width: 10rem">
+          <template #body="slotProps">
+            <div class="flex gap-2">
+              <Button icon="pi pi-plus" severity="success" text rounded @click="openMovement(slotProps.data, 'entrada')" v-tooltip="'Entrada'" />
+              <Button icon="pi pi-minus" severity="danger" text rounded @click="openMovement(slotProps.data, 'salida')" v-tooltip="'Salida'" />
+            </div>
+          </template>
+        </Column>
+      </DataTable>
+    </div>
+
+    <Dialog v-model:visible="productDialog" header="Nuevo Producto" :modal="true" :draggable="false" class="minimal-dialog">
+      <div class="form-grid">
+        <div class="field">
+          <label for="name">Nombre</label>
+          <InputText id="name" v-model="product.nombre" autofocus class="w-full" />
         </div>
-
-        <div class="form-group">
-          <label for="edad" class="label">Edad:</label>
-          <InputNumber 
-            id="edad"
-            v-model="edad" 
-            placeholder="Ingresa tu edad"
-            :min="0" 
-            :max="120"
-            class="input-field"
-          />
+        <div class="field">
+          <label for="cat">Categoría</label>
+          <InputText id="cat" v-model="product.categoria" class="w-full" />
         </div>
-
-        <div class="button-group">
-          <Button 
-            label="Enviar" 
-            icon="pi pi-check"
-            @click="mostrarMensaje"
-            class="button-primary"
-          />
-          <Button 
-            label="Limpiar" 
-            icon="pi pi-times"
-            severity="secondary"
-            @click="limpiarFormulario"
-            class="button-secondary"
-          />
-          <Button 
-            label="Error de Prueba" 
-            icon="pi pi-exclamation-circle"
-            severity="danger"
-            @click="mostrarMensajeError"
-            class="button-danger"
-          />
+        <div class="field">
+          <label for="stock">Stock Inicial</label>
+          <InputNumber id="stock" v-model="product.stock" class="w-full" />
         </div>
-      </template>
-    </Card>
-
-    <Card class="card-textarea">
-      <template #title>
-        <h2>Área de Mensaje</h2>
-      </template>
-      <template #content>
-        <div class="form-group">
-          <label for="mensaje" class="label">Escribe un mensaje:</label>
-          <Textarea 
-            id="mensaje"
-            v-model="mensaje" 
-            rows="4"
-            placeholder="Escribe aquí tu mensaje..."
-            class="textarea-field"
-          />
-        </div>
-
-        <Button 
-          label="Abrir Diálogo" 
-          icon="pi pi-window-maximize"
-          @click="mostrarDialogo"
-          class="button-primary mt-2"
-        />
-      </template>
-    </Card>
-
-    <Card class="card-toggle">
-      <template #title>
-        <h2>Toggle de Control</h2>
-      </template>
-      <template #content>
-        <div class="toggle-group">
-          <span class="toggle-label">Estado del Sistema:</span>
-          <ToggleButton 
-            v-model="isActive"
-            onLabel="Activado"
-            offLabel="Desactivado"
-            onIcon="pi pi-check"
-            offIcon="pi pi-times"
-            @change="cambiarEstadoToggle"
-            class="toggle-button"
-          />
-          <span class="toggle-status">
-            {{ isActive ? '✓ Activado' : '✗ Desactivado' }}
-          </span>
-        </div>
-      </template>
-    </Card>
-
-    <!-- Diálogo Modal -->
-    <Dialog 
-      v-model:visible="showDialog" 
-      header="Enviar Mensaje" 
-      :modal="true"
-      :style="{ width: '50vw' }"
-    >
-      <div class="dialog-content">
-        <p>Mensaje a enviar:</p>
-        <p class="message-preview">{{ mensaje || '(vacío)' }}</p>
       </div>
       <template #footer>
-        <Button 
-          label="Cancelar" 
-          icon="pi pi-times"
-          @click="showDialog = false"
-          class="p-button-text"
-        />
-        <Button 
-          label="Enviar" 
-          icon="pi pi-check"
-          @click="enviarMensaje"
-          class="p-button-success"
-        />
+        <Button label="Cancelar" text @click="productDialog = false" />
+        <Button label="Guardar Producto" @click="saveProduct" />
+      </template>
+    </Dialog>
+
+    <Dialog v-model:visible="movementDialog" :header="'Registrar ' + tipoMovimiento" :modal="true" :draggable="false" class="minimal-dialog">
+      <div class="movement-content">
+        <p>Ajustando stock para: <strong>{{ selectedProduct?.nombre }}</strong></p>
+        <InputNumber v-model="cantidadMovimiento" showButtons :min="1" class="w-full mt-2" placeholder="Cantidad" />
+      </div>
+      <template #footer>
+        <Button label="Confirmar" @click="applyMovement" class="w-full" />
       </template>
     </Dialog>
   </div>
 </template>
 
 <style scoped>
-.container {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  min-height: 100vh;
+/* Contenedor que usa todo el ancho */
+.inventory-container {
+  padding: 2rem 4rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.card-title {
-  margin-bottom: 30px;
-  background: white !important;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+.inventory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 2rem;
+  text-align: left;
 }
 
-.card-title h1 {
+.header-content h1 {
   margin: 0;
-  color: #667eea;
+  font-size: 2rem;
+  color: var(--text-h);
 }
 
-.card-form,
-.card-textarea,
-.card-toggle {
-  margin-bottom: 20px;
-  background: white !important;
+.header-content p {
+  color: var(--text);
+  margin-top: 0.5rem;
+}
+
+/* Tarjeta de la tabla */
+.table-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
 }
 
-.card-form h2,
-.card-textarea h2,
-.card-toggle h2 {
-  color: #667eea;
-  margin-top: 0;
+/* Estilos de la tabla minimalista */
+:deep(.p-datatable-minimal .p-datatable-thead > tr > th) {
+  background: var(--code-bg);
+  color: var(--text-h);
+  border-bottom: 1px solid var(--border);
+  padding: 1.25rem 1rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
 }
 
-.form-group {
-  margin-bottom: 15px;
+:deep(.p-datatable-minimal .p-datatable-tbody > tr > td) {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
 }
 
-.label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-  color: #333;
-  font-size: 0.95rem;
+/* Formularios */
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding-top: 1rem;
 }
 
-.input-field,
-.textarea-field {
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: left;
+}
+
+.field label {
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.movement-content {
+  padding: 1rem 0;
+  text-align: left;
+}
+
+:deep(#app) {
   width: 100% !important;
-  padding: 10px 12px !important;
-  border-radius: 4px !important;
-  border: 1px solid #e0e0e0 !important;
-  font-size: 0.95rem;
-}
-
-.input-field:focus,
-.textarea-field:focus {
-  border-color: #667eea !important;
-  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1) !important;
-}
-
-.button-group {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
-  flex-wrap: wrap;
-}
-
-.button-primary,
-.button-secondary,
-.button-danger {
-  flex: 1;
-  min-width: 120px;
-  padding: 10px 20px !important;
-  border-radius: 4px !important;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.button-primary {
-  background: #667eea !important;
-  color: white !important;
-  border: none !important;
-}
-
-.button-primary:hover {
-  background: #5568d3 !important;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
-
-.button-secondary {
-  background: #f0f0f0 !important;
-  color: #333 !important;
-}
-
-.button-secondary:hover {
-  background: #e0e0e0 !important;
-}
-
-.button-danger {
-  background: #ff6b6b !important;
-  color: white !important;
-}
-
-.button-danger:hover {
-  background: #ee5a52 !important;
-}
-
-.mt-2 {
-  margin-top: 15px;
-}
-
-.toggle-group {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  padding: 15px;
-  background: #f5f5f5;
-  border-radius: 4px;
-}
-
-.toggle-label {
-  font-weight: 600;
-  color: #333;
-}
-
-.toggle-button {
-  width: 100px;
-}
-
-.toggle-status {
-  font-weight: 600;
-  padding: 5px 10px;
-  border-radius: 4px;
-  background: white;
-  color: #667eea;
-  font-size: 0.9rem;
-}
-
-.dialog-content {
-  padding: 10px 0;
-}
-
-.message-preview {
-  padding: 10px;
-  background: #f5f5f5;
-  border-radius: 4px;
-  border-left: 4px solid #667eea;
-  min-height: 60px;
-  font-family: monospace;
-  white-space: pre-wrap;
-  word-break: break-word;
+  max-width: 100% !important;
+  border-inline: none !important;
 }
 </style>
