@@ -1,13 +1,13 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useToast } from 'primevue/usetoast'
 
-// Componentes PrimeVue
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import InputNumber from 'primevue/inputnumber'
+import Dropdown from 'primevue/dropdown'
 import Dialog from 'primevue/dialog'
 import Toast from 'primevue/toast'
 import Tag from 'primevue/tag'
@@ -15,27 +15,140 @@ import Card from 'primevue/card'
 
 const toast = useToast()
 
-// 1. Estado de los Productos (Visualizar Stock Actual)
-const productos = ref([
-  { id: 1, nombre: 'Producto A', stock: 10, categoria: 'Electrónica' },
-  { id: 2, nombre: 'Producto B', stock: 5, categoria: 'Oficina' }
+const categorias = ref([
+  { id_categoria: 1, nombre: 'Electronica', descripcion: 'Dispositivos y accesorios' },
+  { id_categoria: 2, nombre: 'Oficina', descripcion: 'Insumos y materiales de trabajo' }
 ])
 
-// Variables para formularios
+const productos = ref([
+  {
+    id: 1,
+    codigo_sku: 'SKU-001',
+    nombre: 'Producto A',
+    descripcion: 'Producto de ejemplo',
+    precio_compra: 12000,
+    precio_venta: 15000,
+    stock_actual: 10,
+    stock_minimo: 5,
+    id_categoria: 1,
+    proveedor: 'Proveedor Demo'
+  },
+  {
+    id: 2,
+    codigo_sku: 'SKU-002',
+    nombre: 'Producto B',
+    descripcion: 'Producto de oficina',
+    precio_compra: 8000,
+    precio_venta: 11000,
+    stock_actual: 5,
+    stock_minimo: 3,
+    id_categoria: 2,
+    proveedor: 'Proveedor Demo'
+  }
+])
+
+const categoriaForm = ref({ nombre: '', descripcion: '' })
+const selectedCategoryFilter = ref(null)
 const movementDialog = ref(false)
-const product = ref({ nombre: '', stock: 0, categoria: '' })
+const product = ref({
+  codigo_sku: '',
+  nombre: '',
+  descripcion: '',
+  precio_compra: 0,
+  precio_venta: 0,
+  stock_actual: 0,
+  stock_minimo: 0,
+  id_categoria: null,
+  proveedor: ''
+})
 const selectedProduct = ref(null)
 const cantidadMovimiento = ref(0)
-const tipoMovimiento = ref('') 
+const tipoMovimiento = ref('')
 
-// --- FUNCIONES ---
+const categoryOptions = computed(() =>
+  categorias.value.map((categoria) => ({
+    label: categoria.nombre,
+    value: categoria.id_categoria
+  }))
+)
+
+const filteredProducts = computed(() => {
+  if (!selectedCategoryFilter.value) {
+    return productos.value
+  }
+
+  return productos.value.filter((producto) => producto.id_categoria === selectedCategoryFilter.value)
+})
+
+const getCategoryName = (idCategoria) => {
+  const categoria = categorias.value.find((item) => item.id_categoria === idCategoria)
+  return categoria?.nombre ?? 'Sin categoria'
+}
+
+const notifyLowStock = (producto) => {
+  if (producto.stock_actual <= producto.stock_minimo) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Stock bajo',
+      detail: `${producto.nombre} alcanzo el stock minimo (${producto.stock_actual}/${producto.stock_minimo})`,
+      life: 4000
+    })
+  }
+}
+
+const saveCategory = () => {
+  if (!categoriaForm.value.nombre.trim()) {
+    return
+  }
+
+  categorias.value.push({
+    id_categoria: Date.now(),
+    nombre: categoriaForm.value.nombre.trim(),
+    descripcion: categoriaForm.value.descripcion.trim()
+  })
+
+  categoriaForm.value = { nombre: '', descripcion: '' }
+
+  toast.add({
+    severity: 'success',
+    summary: 'Categoria creada',
+    detail: 'La categoria quedo disponible para productos y filtros',
+    life: 3000
+  })
+}
 
 const saveProduct = () => {
-  if (product.value.nombre.trim()) {
-    productos.value.push({ ...product.value, id: Date.now() })
-    product.value = { nombre: '', stock: 0, categoria: '' }
-    toast.add({ severity: 'success', summary: 'Registrado', detail: 'Producto añadido al inventario', life: 3000 })
+  if (!product.value.nombre.trim()) {
+    return
   }
+
+  if (!product.value.id_categoria) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Falta categoria',
+      detail: 'Selecciona una categoria antes de guardar el producto',
+      life: 3000
+    })
+    return
+  }
+
+  const nuevoProducto = { ...product.value, id: Date.now() }
+  productos.value.push(nuevoProducto)
+  notifyLowStock(nuevoProducto)
+
+  product.value = {
+    codigo_sku: '',
+    nombre: '',
+    descripcion: '',
+    precio_compra: 0,
+    precio_venta: 0,
+    stock_actual: 0,
+    stock_minimo: 0,
+    id_categoria: null,
+    proveedor: ''
+  }
+
+  toast.add({ severity: 'success', summary: 'Registrado', detail: 'Producto anadido al inventario', life: 3000 })
 }
 
 const openMovement = (prod, tipo) => {
@@ -46,55 +159,120 @@ const openMovement = (prod, tipo) => {
 }
 
 const applyMovement = () => {
-  const p = productos.value.find(x => x.id === selectedProduct.value.id)
-  if (tipoMovimiento.value === 'entrada') {
-    p.stock += cantidadMovimiento.value
-  } else {
-    if (p.stock >= cantidadMovimiento.value) {
-      p.stock -= cantidadMovimiento.value
-    } else {
-      return toast.add({ severity: 'error', summary: 'Error', detail: 'Stock insuficiente', life: 3000 })
-    }
+  if (!selectedProduct.value) {
+    return
   }
+
+  const p = productos.value.find((x) => x.id === selectedProduct.value.id)
+  if (!p) {
+    return
+  }
+
+  if (tipoMovimiento.value === 'entrada') {
+    p.stock_actual += cantidadMovimiento.value
+  } else if (p.stock_actual >= cantidadMovimiento.value) {
+    p.stock_actual -= cantidadMovimiento.value
+  } else {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Stock insuficiente', life: 3000 })
+    return
+  }
+
   movementDialog.value = false
-  toast.add({ severity: 'info', summary: 'Actualizado', detail: `Se registró una ${tipoMovimiento.value}`, life: 3000 })
+  notifyLowStock(p)
+  toast.add({ severity: 'info', summary: 'Actualizado', detail: `Se registro una ${tipoMovimiento.value}`, life: 3000 })
 }
 
-const getStockSeverity = (stock) => {
-  if (stock > 5) return 'success'
-  if (stock > 0) return 'warning'
-  return 'danger'
+const getStockSeverity = (stockActual, stockMinimo) => {
+  if (stockActual <= 0) return 'danger'
+  if (stockActual <= stockMinimo) return 'warning'
+  return 'success'
+}
+
+const formatCurrency = (value) => {
+  return new Intl.NumberFormat('es-CL', {
+    style: 'currency',
+    currency: 'CLP',
+    maximumFractionDigits: 0
+  }).format(value || 0)
 }
 </script>
 
 <template>
   <div class="inventory-container">
     <Toast />
-    
+
     <div class="inventory-header">
       <div class="header-content">
-        <h1>Gestión de Inventario</h1>
+        <h1>Gestion de Inventario</h1>
         <p>Control de stock y movimientos</p>
       </div>
     </div>
 
     <Card class="custom-card mb-6">
       <template #title>
+        <span class="card-title"><i class="pi pi-tags"></i> Crear Categoria</span>
+      </template>
+      <template #content>
+        <div class="category-form-grid">
+          <div class="field">
+            <label>Nombre de la categoria</label>
+            <InputText v-model="categoriaForm.nombre" placeholder="Ej. Electronica" />
+          </div>
+          <div class="field">
+            <label>Descripcion</label>
+            <InputText v-model="categoriaForm.descripcion" placeholder="Ej. Dispositivos y accesorios" />
+          </div>
+          <div class="field align-self-end">
+            <Button label="Agregar categoria" icon="pi pi-plus" @click="saveCategory" class="p-button-sm" />
+          </div>
+        </div>
+      </template>
+    </Card>
+
+    <Card class="custom-card mb-6">
+      <template #title>
         <span class="card-title"><i class="pi pi-plus-circle"></i> Registrar Nuevo Producto</span>
       </template>
       <template #content>
-        <div class="horizontal-form">
+        <div class="product-form-grid">
+          <div class="field">
+            <label>Codigo SKU</label>
+            <InputText v-model="product.codigo_sku" placeholder="SKU-001" />
+          </div>
           <div class="field">
             <label>Nombre</label>
-            <InputText v-model="product.nombre" placeholder="Nombre del ítem" />
+            <InputText v-model="product.nombre" placeholder="Nombre del item" />
           </div>
           <div class="field">
-            <label>Categoría</label>
-            <InputText v-model="product.categoria" placeholder="Categoría" />
+            <label>Categoria</label>
+            <Dropdown
+              v-model="product.id_categoria"
+              :options="categoryOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Selecciona una categoria"
+              :showClear="true"
+            />
           </div>
           <div class="field">
-            <label>Stock Inicial</label>
-            <InputNumber v-model="product.stock" :min="0" />
+            <label>Proveedor</label>
+            <InputText v-model="product.proveedor" placeholder="Proveedor" />
+          </div>
+          <div class="field">
+            <label>Precio Compra</label>
+            <InputNumber v-model="product.precio_compra" :min="0" mode="currency" currency="CLP" locale="es-CL" />
+          </div>
+          <div class="field">
+            <label>Precio Venta</label>
+            <InputNumber v-model="product.precio_venta" :min="0" mode="currency" currency="CLP" locale="es-CL" />
+          </div>
+          <div class="field">
+            <label>Stock Actual</label>
+            <InputNumber v-model="product.stock_actual" :min="0" />
+          </div>
+          <div class="field">
+            <label>Stock Minimo</label>
+            <InputNumber v-model="product.stock_minimo" :min="0" />
           </div>
           <div class="field align-self-end">
             <Button label="Agregar al Inventario" icon="pi pi-plus" @click="saveProduct" class="p-button-sm" />
@@ -104,14 +282,49 @@ const getStockSeverity = (stock) => {
     </Card>
 
     <div class="table-card">
-      <DataTable :value="productos" responsiveLayout="scroll" class="p-datatable-minimal">
+      <div class="table-toolbar">
+        <div class="field toolbar-filter">
+          <label>Filtrar por categoria</label>
+          <Dropdown
+            v-model="selectedCategoryFilter"
+            :options="categoryOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Todas las categorias"
+            :showClear="true"
+          />
+        </div>
+      </div>
+
+      <DataTable :value="filteredProducts" responsiveLayout="scroll" class="p-datatable-minimal">
+        <Column field="codigo_sku" header="Codigo"></Column>
         <Column field="nombre" header="Nombre del Producto"></Column>
-        <Column field="categoria" header="Categoría"></Column>
-        <Column field="stock" header="Stock Actual">
+        <Column field="descripcion" header="Descripcion"></Column>
+        <Column header="Categoria">
           <template #body="slotProps">
-            <Tag :value="slotProps.data.stock" :severity="getStockSeverity(slotProps.data.stock)" />
+            {{ getCategoryName(slotProps.data.id_categoria) }}
           </template>
         </Column>
+        <Column field="proveedor" header="Proveedor"></Column>
+        <Column field="precio_compra" header="Precio Compra">
+          <template #body="slotProps">
+            {{ formatCurrency(slotProps.data.precio_compra) }}
+          </template>
+        </Column>
+        <Column field="precio_venta" header="Precio Venta">
+          <template #body="slotProps">
+            {{ formatCurrency(slotProps.data.precio_venta) }}
+          </template>
+        </Column>
+        <Column field="stock_actual" header="Stock Actual">
+          <template #body="slotProps">
+            <Tag
+              :value="slotProps.data.stock_actual"
+              :severity="getStockSeverity(slotProps.data.stock_actual, slotProps.data.stock_minimo)"
+            />
+          </template>
+        </Column>
+        <Column field="stock_minimo" header="Stock Minimo"></Column>
         <Column header="Movimientos" headerStyle="width: 10rem">
           <template #body="slotProps">
             <div class="movement-actions">
@@ -123,7 +336,6 @@ const getStockSeverity = (stock) => {
       </DataTable>
     </div>
 
- 
     <Dialog v-model:visible="movementDialog" :header="'Registrar ' + tipoMovimiento" :modal="true" :draggable="false" class="minimal-dialog">
       <div class="movement-content">
         <p>Ajustando stock para: <strong>{{ selectedProduct?.nombre }}</strong></p>
@@ -137,7 +349,6 @@ const getStockSeverity = (stock) => {
 </template>
 
 <style scoped>
-/* Contenedor que usa todo el ancho */
 .inventory-container {
   padding: 2rem 4rem;
   background-color: #16171d;
@@ -165,24 +376,28 @@ const getStockSeverity = (stock) => {
 }
 
 .custom-card {
-  background: #1f2028 !important; 
+  background: #1f2028 !important;
   border: 1px solid #2e303a !important;
   color: #f3f4f6 !important;
-  width: 100%; /* Asegura que ambas tarjetas midan lo mismo */
+  width: 100%;
 }
 
 .mb-6 {
   margin-bottom: 1.5rem;
 }
 
-.horizontal-form {
-  display: flex;
-  gap: 20px;
-  align-items: flex-end;
-  flex-wrap: wrap; /* Para que sea responsivo si se achica la pantalla */
+.category-form-grid,
+.product-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem 1.25rem;
+  align-items: end;
 }
 
-/* Tarjeta de la tabla */
+.align-self-end {
+  align-self: end;
+}
+
 .table-card {
   background: var(--bg);
   border: 1px solid var(--border);
@@ -190,7 +405,14 @@ const getStockSeverity = (stock) => {
   overflow: hidden;
 }
 
-/* Estilos de la tabla minimalista */
+.table-toolbar {
+  padding: 1rem 1rem 0.25rem;
+}
+
+.toolbar-filter {
+  max-width: 320px;
+}
+
 :deep(.p-datatable-minimal .p-datatable-thead > tr > th) {
   background: var(--code-bg);
   color: var(--text-h);
@@ -232,14 +454,6 @@ const getStockSeverity = (stock) => {
   border-color: #b91c1c !important;
 }
 
-/* Formularios */
-.form-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  padding-top: 1rem;
-}
-
 .field {
   display: flex;
   flex-direction: column;
@@ -257,9 +471,55 @@ const getStockSeverity = (stock) => {
   text-align: left;
 }
 
+@media (max-width: 960px) {
+  .category-form-grid,
+  .product-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .category-form-grid,
+  .product-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbar-filter {
+    max-width: 100%;
+  }
+}
+
 :deep(#app) {
   width: 100% !important;
   max-width: 100% !important;
   border-inline: none !important;
+}
+</style>
+
+<style>
+.minimal-dialog.p-dialog {
+  border: 1px solid #2e303a !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+}
+
+.minimal-dialog .p-dialog-header {
+  background: #1f2028 !important;
+  color: #f3f4f6 !important;
+  border-bottom: 1px solid #2e303a !important;
+}
+
+.minimal-dialog .p-dialog-header .p-dialog-title {
+  color: #f3f4f6 !important;
+}
+
+.minimal-dialog .p-dialog-header .p-dialog-header-icon {
+  color: #9ca3af !important;
+}
+
+.minimal-dialog .p-dialog-content,
+.minimal-dialog .p-dialog-footer {
+  background: #16171d !important;
+  color: #e5e7eb !important;
 }
 </style>
