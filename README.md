@@ -1,18 +1,70 @@
 
-Comandos para iniciar Supabase:
+# Instalación y ejecución del proyecto
 
+## 1. Instalar dependencias
 
-Inicializar el proyecto Supabase:
+Ubícate dentro de la carpeta `web/` e instala los módulos definidos en `package.json`.
 
-`npx supabase init`
+```bash
+cd web
+npm install
+```
 
+---
 
+## 2. Ejecutar Supabase localmente
 
-Inicie la pila Supabase:
+Desde la carpeta `web/` puedes iniciar o detener los servicios de Supabase.
 
-`npx supabase start`
+### Iniciar Supabase
 
+```bash
+npx supabase start
+```
 
-Terminar la pila Supabase:
+Accede a la aplicación en:
 
-`npx supabase stop`
+```
+http://localhost:3000/
+```
+
+### Detener Supabase
+
+```bash
+npx supabase stop
+```
+
+---
+
+## 3. Ejecutar el frontend con Docker
+
+Ubícate en el mismo directorio donde se encuentra el archivo `docker-compose.yml`.
+
+### Levantar los servicios
+
+```bash
+docker compose up --build
+```
+
+Accede al servicio en:
+
+```
+http://127.0.0.1:54323
+```
+
+### Detener los servicios
+
+```bash
+docker compose down
+```
+
+---
+
+## Requisitos
+
+Asegúrate de tener instalados:
+
+- Node.js
+- npm
+- Docker
+- Docker Compose
