@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useToast } from 'primevue/usetoast'
 
 import DataTable from 'primevue/datatable'
@@ -12,6 +12,7 @@ import Dialog from 'primevue/dialog'
 import Toast from 'primevue/toast'
 import Tag from 'primevue/tag'
 import Card from 'primevue/card'
+import { categoriasService, productosService } from '../service'
 
 const toast = useToast()
 
@@ -68,7 +69,7 @@ const tipoMovimiento = ref('')
 const categoryOptions = computed(() =>
   categorias.value.map((categoria) => ({
     label: categoria.nombre,
-    value: categoria.id_categoria
+    value: Number(categoria.id_categoria)
   }))
 )
 
@@ -85,6 +86,48 @@ const getCategoryName = (idCategoria) => {
   return categoria?.nombre ?? 'Sin categoria'
 }
 
+const mapDbProduct = (item) => ({
+  id: item.id_producto,
+  codigo_sku: item.codigo_sku ?? '',
+  nombre: item.nombre ?? '',
+  descripcion: item.descripcion ?? '',
+  precio_compra: item.precio_compra ?? 0,
+  precio_venta: item.precio_venta ?? 0,
+  stock_actual: item.stock_actual ?? 0,
+  stock_minimo: item.stock_minimo ?? 0,
+  id_categoria: item.id_categoria ?? null,
+  proveedor: item.id_proveedor ? `Proveedor #${item.id_proveedor}` : ''
+})
+
+const loadInitialData = async () => {
+  const [categoriasRes, productosRes] = await Promise.all([
+    categoriasService.obtenerTodas(),
+    productosService.obtenerTodos()
+  ])
+
+  if (categoriasRes.success) {
+    categorias.value = categoriasRes.data
+  } else {
+    toast.add({
+      severity: 'warn',
+      summary: 'Categorias locales',
+      detail: 'No se pudieron cargar categorias desde la base de datos',
+      life: 3000
+    })
+  }
+
+  if (productosRes.success) {
+    productos.value = productosRes.data.map(mapDbProduct)
+  } else {
+    toast.add({
+      severity: 'warn',
+      summary: 'Productos locales',
+      detail: 'No se pudieron cargar productos desde la base de datos',
+      life: 3000
+    })
+  }
+}
+
 const notifyLowStock = (producto) => {
   if (producto.stock_actual <= producto.stock_minimo) {
     toast.add({
@@ -96,28 +139,40 @@ const notifyLowStock = (producto) => {
   }
 }
 
-const saveCategory = () => {
+const saveCategory = async () => {
   if (!categoriaForm.value.nombre.trim()) {
     return
   }
 
-  categorias.value.push({
-    id_categoria: Date.now(),
+  const payload = {
     nombre: categoriaForm.value.nombre.trim(),
-    descripcion: categoriaForm.value.descripcion.trim()
-  })
+    descripcion: categoriaForm.value.descripcion.trim() || null
+  }
+
+  const res = await categoriasService.crear(payload)
+  if (!res.success) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: res.error || 'No se pudo registrar la categoria en la base de datos',
+      life: 3500
+    })
+    return
+  }
+
+  categorias.value.push(res.data)
 
   categoriaForm.value = { nombre: '', descripcion: '' }
 
   toast.add({
     severity: 'success',
     summary: 'Categoria creada',
-    detail: 'La categoria quedo disponible para productos y filtros',
+    detail: 'Categoria registrada en la base de datos',
     life: 3000
   })
 }
 
-const saveProduct = () => {
+const saveProduct = async () => {
   if (!product.value.nombre.trim()) {
     return
   }
@@ -132,7 +187,30 @@ const saveProduct = () => {
     return
   }
 
-  const nuevoProducto = { ...product.value, id: Date.now() }
+  const payload = {
+    codigo_sku: product.value.codigo_sku?.trim() || null,
+    nombre: product.value.nombre.trim(),
+    descripcion: product.value.descripcion?.trim() || null,
+    precio_compra: product.value.precio_compra ?? 0,
+    precio_venta: product.value.precio_venta ?? 0,
+    stock_actual: product.value.stock_actual ?? 0,
+    stock_minimo: product.value.stock_minimo ?? 0,
+    id_categoria: Number(product.value.id_categoria),
+    id_proveedor: null
+  }
+
+  const res = await productosService.crear(payload)
+  if (!res.success) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: res.error || 'No se pudo guardar en la base de datos',
+      life: 3500
+    })
+    return
+  }
+
+  const nuevoProducto = mapDbProduct(res.data)
   productos.value.push(nuevoProducto)
   notifyLowStock(nuevoProducto)
 
@@ -148,7 +226,7 @@ const saveProduct = () => {
     proveedor: ''
   }
 
-  toast.add({ severity: 'success', summary: 'Registrado', detail: 'Producto anadido al inventario', life: 3000 })
+  toast.add({ severity: 'success', summary: 'Registrado', detail: 'Producto guardado en la base de datos', life: 3000 })
 }
 
 const openMovement = (prod, tipo) => {
@@ -195,6 +273,10 @@ const formatCurrency = (value) => {
     maximumFractionDigits: 0
   }).format(value || 0)
 }
+
+onMounted(() => {
+  loadInitialData()
+})
 </script>
 
 <template>
