@@ -118,6 +118,19 @@ const guardar = () => {
 const cerrar = () => {
   emit('cerrar');
 };
+
+const resetForm = () => {
+  formulario.value = {
+    nombre_empresa: '',
+    nombre_contacto: '',
+    telefono: '',
+    correo: ''
+  };
+  titulo.value = 'Nuevo Proveedor';
+  error.value = '';
+};
+
+defineExpose({ resetForm });
 </script>
 
 <style scoped>

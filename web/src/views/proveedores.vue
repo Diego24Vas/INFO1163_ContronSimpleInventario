@@ -5,6 +5,7 @@
     <div class="contenido">
       <div class="formulario-section">
         <FormularioProveedor
+          ref="formProveedorRef"
           :proveedor-id="proveedorEdicion?.id_proveedor"
           :proveedor-data="proveedorEdicion"
           :cargando="cargando"
@@ -46,6 +47,7 @@ const {
 
 const proveedorEdicion = ref(null);
 const eliminando = ref(false);
+const formProveedorRef = ref(null);
 
 onMounted(() => {
   cargarProveedores();
@@ -76,6 +78,7 @@ const eliminarProveedor = async (id) => {
 };
 
 const cerrarFormulario = () => {
+  formProveedorRef.value?.resetForm();
   proveedorEdicion.value = null;
 };
 </script>
