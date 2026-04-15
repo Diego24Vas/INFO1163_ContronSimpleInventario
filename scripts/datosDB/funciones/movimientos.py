@@ -1,6 +1,5 @@
 from faker import Faker
 import random
-import pandas as pd
 
 def generar_datos_movimientos(cantidad_registros=20, total_productos_creados=10):
     fake = Faker('es_ES')
@@ -42,11 +41,3 @@ def generar_datos_movimientos(cantidad_registros=20, total_productos_creados=10)
         registro['id_movimiento'] = index
 
     return datos_movimientos
-
-# Generar 20 movimientos de prueba
-mis_movimientos = generar_datos_movimientos(20)
-
-# Mostrar los datos en un formato de tabla usando Pandas
-df_movimientos = pd.DataFrame(mis_movimientos)
-print("--- TABLA DE MOVIMIENTOS DE INVENTARIO ---")
-print(df_movimientos.to_string(index=False))

@@ -1,6 +1,5 @@
 from faker import Faker
 import random
-import pandas as pd
 
 def generar_datos_proveedores(cantidad_registros=5):
     # Usamos Faker. Si quieres datos chilenos puedes usar 'es_CL', 
@@ -39,11 +38,3 @@ def generar_datos_proveedores(cantidad_registros=5):
         datos_proveedores.append(registro)
 
     return datos_proveedores
-
-# Generar los 5 registros
-mis_proveedores = generar_datos_proveedores(5)
-
-# Mostrar los datos en un formato de tabla usando Pandas
-df_proveedores = pd.DataFrame(mis_proveedores)
-print("--- TABLA DE PROVEEDORES ---")
-print(df_proveedores.to_string(index=False))

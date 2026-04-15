@@ -1,8 +1,7 @@
 import random
 from faker import Faker
-import pandas as pd
 
-def generar_datos_ferreteria(cantidad_registros):
+def generar_datos_ferreteria(cantidad_registros, cantidad_categorias=10, cantidad_proveedores=5):
     # Inicializamos Faker en español
     fake = Faker('es_ES')
     
@@ -49,24 +48,17 @@ def generar_datos_ferreteria(cantidad_registros):
         # Construcción del registro
         registro = {
             "id_producto": i,
-            "codigo_sku": f"SKU-{fake.unique.ean8()}", # Genera un código de barras único de 8 dígitos
+            "codigo_sku": f"SKU-FER-{str(i).zfill(6)}", # Genera SKU único y determinista
             "nombre": nombre,
             "descripcion": descripcion,
             "precio_compra": precio_compra,
             "precio_venta": precio_venta,
             "stock_actual": stock_actual,
             "stock_minimo": stock_minimo,
-            "id_categoria": random.randint(1, 10), # Asumiendo 10 categorías posibles
-            "id_proveedor": random.randint(1, 5)   # Asumiendo 5 proveedores posibles
+            "id_categoria": random.randint(1, cantidad_categorias), # Referencias válidas a categorías
+            "id_proveedor": random.randint(1, cantidad_proveedores)   # Referencias válidas a proveedores
         }
         
         datos_productos.append(registro)
 
     return datos_productos
-
-# Generar 10 registros de prueba
-mis_productos = generar_datos_ferreteria(10)
-
-# Mostrar los datos en un formato de tabla usando Pandas
-df_productos = pd.DataFrame(mis_productos)
-print(df_productos.to_string(index=False))

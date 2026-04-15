@@ -1,7 +1,6 @@
 from faker import Faker
-import pandas as pd
 
-def generar_datos_categorias():
+def generar_datos_categorias(cantidad_registros=10):
     fake = Faker('es_ES')
     
     # Lista de categorías clásicas y coherentes para una ferretería
@@ -17,11 +16,14 @@ def generar_datos_categorias():
         "Jardinería y Exteriores",
         "Aseo y Limpieza"
     ]
+    
+    # Limitar a la cantidad disponible si se pide más
+    cantidad_registros = min(cantidad_registros, len(nombres_categorias))
 
     datos_categorias = []
 
-    # Iteramos directamente sobre nuestra lista para crear un ID autoincremental
-    for i, nombre in enumerate(nombres_categorias, start=1):
+    # Iteramos sobre la cantidad solicitada para crear un ID autoincremental
+    for i, nombre in enumerate(nombres_categorias[:cantidad_registros], start=1):
         
         # Creamos una descripción que tenga sentido con el nombre de la categoría
         # y le agregamos una oración aleatoria de Faker para darle volumen.
@@ -37,11 +39,3 @@ def generar_datos_categorias():
         datos_categorias.append(registro)
 
     return datos_categorias
-
-# Generar y guardar los registros
-mis_categorias = generar_datos_categorias()
-
-# Mostrar los datos en un formato de tabla usando Pandas
-df_categorias = pd.DataFrame(mis_categorias)
-print("--- TABLA DE CATEGORÍAS ---")
-print(df_categorias.to_string(index=False))
