@@ -8,7 +8,6 @@
       <table class="tabla">
         <thead>
           <tr>
-            <th>ID</th>
             <th>Empresa</th>
             <th>Contacto</th>
             <th>Teléfono</th>
@@ -18,7 +17,6 @@
         </thead>
         <tbody>
           <tr v-for="proveedor in proveedores" :key="proveedor.id_proveedor" class="fila">
-            <td class="id">{{ proveedor.id_proveedor }}</td>
             <td>{{ proveedor.nombre_empresa }}</td>
             <td>{{ proveedor.nombre_contacto }}</td>
             <td>{{ proveedor.telefono }}</td>

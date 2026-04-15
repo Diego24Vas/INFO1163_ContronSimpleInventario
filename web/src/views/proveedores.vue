@@ -14,17 +14,22 @@
         />
       </div>
 
-      <div class="listado-section">
-        <div v-if="cargando" class="loading">Cargando...</div>
-        <div v-else-if="error" class="error">{{ error }}</div>
-        <ListadoProveedores
-          v-else
-          :proveedores="proveedores"
-          :eliminando="eliminando"
-          @editar="editarProveedor"
-          @eliminar="eliminarProveedor"
-        />
+      <div class="estadisticas-section">
+        <EstadisticasProveedores :proveedores="proveedores" />
       </div>
+    </div>
+
+    <div class="listado-section">
+      <h2>Listado de Proveedores</h2>
+      <div v-if="cargando" class="loading">Cargando...</div>
+      <div v-else-if="error" class="error">{{ error }}</div>
+      <ListadoProveedores
+        v-else
+        :proveedores="proveedores"
+        :eliminando="eliminando"
+        @editar="editarProveedor"
+        @eliminar="eliminarProveedor"
+      />
     </div>
   </div>
 </template>
@@ -33,6 +38,7 @@
 import { ref, onMounted } from 'vue';
 import FormularioProveedor from '../components/FormularioProveedor.vue';
 import ListadoProveedores from '../components/ListadoProveedores.vue';
+import EstadisticasProveedores from '../components/EstadisticasProveedores.vue';
 import { useProveedores } from '../composables/useProveedores';
 
 const {
@@ -96,9 +102,10 @@ const cerrarFormulario = () => {
 
 .contenido {
   display: grid;
-  grid-template-columns: 1fr 1.5fr;
+  grid-template-columns: 1fr 1fr;
   gap: var(--spacing-xl);
   align-items: start;
+  margin-bottom: var(--spacing-2xl);
 }
 
 .formulario-section {
@@ -106,8 +113,20 @@ const cerrarFormulario = () => {
   top: var(--spacing-xl);
 }
 
+.estadisticas-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
 .listado-section {
-  min-height: 300px;
+  margin-top: var(--spacing-2xl);
+}
+
+.listado-section h2 {
+  margin: 0 0 var(--spacing-lg) 0;
+  color: var(--primary);
+  font-size: 1.3rem;
 }
 
 .loading {
@@ -124,13 +143,27 @@ const cerrarFormulario = () => {
   border-left: 3px solid var(--error);
 }
 
-@media (max-width: 968px) {
+@media (max-width: 1024px) {
   .contenido {
     grid-template-columns: 1fr;
   }
 
   .formulario-section {
     position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .proveedores {
+    padding: var(--spacing-lg);
+  }
+
+  .contenido {
+    gap: var(--spacing-lg);
+  }
+
+  .listado-section {
+    padding: var(--spacing-lg);
   }
 }
 </style>
