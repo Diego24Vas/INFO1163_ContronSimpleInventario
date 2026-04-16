@@ -11,6 +11,7 @@
             <th>SKU</th>
             <th>Producto</th>
             <th>Categoria</th>
+            <th>Proveedor</th>
             <th>Stock</th>
             <th>Precio Compra</th>
             <th>Precio Venta</th>
@@ -22,6 +23,7 @@
             <td>{{ producto.codigo_sku || '-' }}</td>
             <td>{{ producto.nombre }}</td>
             <td>{{ getNombreCategoria(producto.id_categoria) }}</td>
+            <td>{{ getNombreProveedor(producto.id_proveedor) }}</td>
             <td>
               <span :class="['stock-pill', { bajo: producto.stock_actual <= producto.stock_minimo }]">
                 {{ producto.stock_actual }} / min {{ producto.stock_minimo }}
@@ -51,6 +53,10 @@ const props = defineProps({
   categorias: {
     type: Array,
     default: () => []
+  },
+  proveedores: {
+    type: Array,
+    default: () => []
   }
 })
 
@@ -59,6 +65,11 @@ const emit = defineEmits(['editar', 'eliminar', 'movimiento'])
 const getNombreCategoria = (idCategoria) => {
   const categoria = props.categorias.find(item => item.id_categoria === idCategoria)
   return categoria?.nombre || '-'
+}
+
+const getNombreProveedor = (idProveedor) => {
+  const proveedor = props.proveedores.find(item => item.id_proveedor === idProveedor)
+  return proveedor?.nombre_empresa || '-'
 }
 
 const formatPrice = (value) => {

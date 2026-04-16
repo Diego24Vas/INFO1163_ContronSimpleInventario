@@ -26,6 +26,16 @@
         </select>
       </div>
 
+      <div class="form-group">
+        <label for="id_proveedor">Proveedor *</label>
+        <select id="id_proveedor" v-model.number="formulario.id_proveedor" required>
+          <option :value="null" disabled>Selecciona un proveedor</option>
+          <option v-for="proveedor in proveedores" :key="proveedor.id_proveedor" :value="proveedor.id_proveedor">
+            {{ proveedor.nombre_empresa }}
+          </option>
+        </select>
+      </div>
+
       <div class="form-row">
         <div class="form-group">
           <label for="precio_compra">Precio Compra</label>
@@ -74,6 +84,10 @@ const props = defineProps({
     type: Array,
     default: () => []
   },
+  proveedores: {
+    type: Array,
+    default: () => []
+  },
   cargando: {
     type: Boolean,
     default: false
@@ -86,6 +100,7 @@ const formulario = ref({
   codigo_sku: '',
   nombre: '',
   id_categoria: null,
+  id_proveedor: null,
   precio_compra: 0,
   precio_venta: 0,
   stock_actual: 1,
@@ -102,6 +117,7 @@ watch(
         codigo_sku: newVal.codigo_sku ?? '',
         nombre: newVal.nombre ?? '',
         id_categoria: newVal.id_categoria ?? null,
+        id_proveedor: newVal.id_proveedor ?? null,
         precio_compra: Number(newVal.precio_compra ?? 0),
         precio_venta: Number(newVal.precio_venta ?? 0),
         stock_actual: Number(newVal.stock_actual ?? 1),
@@ -113,6 +129,7 @@ watch(
         codigo_sku: '',
         nombre: '',
         id_categoria: null,
+        id_proveedor: null,
         precio_compra: 0,
         precio_venta: 0,
         stock_actual: 1,
@@ -137,6 +154,7 @@ const resetForm = () => {
     codigo_sku: '',
     nombre: '',
     id_categoria: null,
+    id_proveedor: null,
     precio_compra: 0,
     precio_venta: 0,
     stock_actual: 1,

@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import { productosService } from '../service/productosService'
 import { categoriasService } from '../service/categoriasService'
 import { movimientosService } from '../service/movimientosService'
+import { proveedoresService } from '../service/proveedoresService'
 
 const SKU_REGEX = /^SKU-(\d+)$/i
 
@@ -21,6 +22,7 @@ const mapProductoDb = (item) => ({
 export const useProductos = () => {
   const productos = ref([])
   const categorias = ref([])
+  const proveedores = ref([])
   const cargando = ref(false)
   const error = ref('')
 
@@ -29,9 +31,10 @@ export const useProductos = () => {
     error.value = ''
 
     try {
-      const [resProductos, resCategorias] = await Promise.all([
+      const [resProductos, resCategorias, resProveedores] = await Promise.all([
         productosService.obtenerTodos(),
-        categoriasService.obtenerTodas()
+        categoriasService.obtenerTodas(),
+        proveedoresService.obtenerTodos()
       ])
 
       if (resProductos.success) {
@@ -44,6 +47,12 @@ export const useProductos = () => {
         categorias.value = resCategorias.data || []
       } else if (!error.value) {
         error.value = resCategorias.error || 'Error al cargar categorias'
+      }
+
+      if (resProveedores.success) {
+        proveedores.value = resProveedores.data || []
+      } else if (!error.value) {
+        error.value = resProveedores.error || 'Error al cargar proveedores'
       }
     } catch (err) {
       error.value = err.message || 'Error desconocido'
@@ -76,6 +85,7 @@ export const useProductos = () => {
   const sanitizeProductoInput = (producto, excludeId = null) => {
     const nombre = String(producto.nombre || '').trim()
     const idCategoria = Number(producto.id_categoria)
+    const idProveedor = Number(producto.id_proveedor)
     const precioCompra = Number(producto.precio_compra || 0)
     const precioVenta = Number(producto.precio_venta || 0)
     const stockActual = Number(producto.stock_actual || 0)
@@ -88,6 +98,10 @@ export const useProductos = () => {
 
     if (!idCategoria || Number.isNaN(idCategoria)) {
       return { success: false, error: 'Selecciona una categoria valida.' }
+    }
+
+    if (!idProveedor || Number.isNaN(idProveedor)) {
+      return { success: false, error: 'Selecciona un proveedor valido.' }
     }
 
     if ([precioCompra, precioVenta, stockActual, stockMinimo].some(Number.isNaN)) {
@@ -134,7 +148,7 @@ export const useProductos = () => {
         stock_actual: stockActual,
         stock_minimo: stockMinimo,
         id_categoria: idCategoria,
-        id_proveedor: null
+        id_proveedor: idProveedor
       },
       generatedSku,
       sku: finalSku
@@ -255,6 +269,7 @@ export const useProductos = () => {
   return {
     productos,
     categorias,
+    proveedores,
     cargando,
     error,
     cargarDatosIniciales,

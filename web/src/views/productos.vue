@@ -7,6 +7,10 @@
       <buscador @search="handleSearch" placeholder="Buscar por nombre o SKU" />
     </div>
 
+    <div v-if="stockBajoCount > 0" class="alerta-stock-bajo">
+      <strong>Atencion:</strong> Hay {{ stockBajoCount }} producto(s) con stock bajo o al minimo.
+    </div>
+
     <div class="contenido">
       <div class="formulario-section">
         <FormularioProducto
@@ -14,6 +18,7 @@
           :producto-id="productoEdicion?.id_producto"
           :producto-data="productoEdicion"
           :categorias="categorias"
+          :proveedores="proveedores"
           :cargando="cargando"
           @guardar="guardarProducto"
           @cerrar="cerrarFormulario"
@@ -21,7 +26,7 @@
       </div>
 
       <div class="estadisticas-section">
-        <EstadisticasProductos :productos="productosFiltrados" />
+        <EstadisticasProductos :productos="productosFiltrados" :categorias="categorias" :proveedores="proveedores" />
       </div>
     </div>
 
@@ -33,6 +38,7 @@
         v-else
         :productos="productosFiltrados"
         :categorias="categorias"
+        :proveedores="proveedores"
         @editar="editarProducto"
         @eliminar="eliminarProducto"
         @movimiento="abrirMovimiento"
@@ -78,6 +84,7 @@ const toast = useToast()
 const {
   productos,
   categorias,
+  proveedores,
   cargando,
   error,
   cargarDatosIniciales,
@@ -98,16 +105,22 @@ const cantidadMovimiento = ref(1)
 const mensajeMovimiento = ref('')
 
 const productosFiltrados = computed(() => {
-  if (!busqueda.value.trim()) {
-    return productos.value
+  let resultado = productos.value
+
+  if (busqueda.value.trim()) {
+    const query = busqueda.value.toLowerCase()
+    resultado = resultado.filter((producto) => {
+      const nombre = String(producto.nombre || '').toLowerCase()
+      const sku = String(producto.codigo_sku || '').toLowerCase()
+      return nombre.includes(query) || sku.includes(query)
+    })
   }
 
-  const query = busqueda.value.toLowerCase()
-  return productos.value.filter((producto) => {
-    const nombre = String(producto.nombre || '').toLowerCase()
-    const sku = String(producto.codigo_sku || '').toLowerCase()
-    return nombre.includes(query) || sku.includes(query)
-  })
+  return resultado
+})
+
+const stockBajoCount = computed(() => {
+  return productosFiltrados.value.filter((producto) => producto.stock_actual <= producto.stock_minimo).length
 })
 
 onMounted(() => {
@@ -256,6 +269,15 @@ const confirmarMovimiento = async () => {
 }
 
 .buscador-wrapper {
+  margin-bottom: var(--spacing-lg);
+}
+
+.alerta-stock-bajo {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: var(--warning);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
   margin-bottom: var(--spacing-lg);
 }
 
