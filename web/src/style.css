@@ -121,14 +121,9 @@ a:hover {
 button {
   font-family: inherit;
   cursor: pointer;
-  transition: all var(--transition-base);
   border: none;
   border-radius: var(--radius-md);
   font-weight: 500;
-}
-
-button:not(:disabled):hover {
-  transform: translateY(-2px);
 }
 
 button:disabled {

@@ -44,10 +44,10 @@
           </li>
           <li>
             <router-link
-              to="/Historial"
+              to="/historial"
               class="menu-item"
-              :class="{ active: activeMenu === 'Historial' }"
-              @click="setActive('movimientos')"
+              :class="{ active: activeMenu === 'historial' }"
+              @click="setActive('historial')"
             >
               <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2V17zm4 0h-2V7h2V17zm4 0h-2v-11h2V17z"/>
@@ -91,8 +91,8 @@ const updateActiveMenu = () => {
     activeMenu.value = 'productos'
   } else if (path === '/categorias') {
     activeMenu.value = 'categorias'
-  } else if (path === '/Historial') {
-    activeMenu.value = 'movimientos'
+  } else if (path === '/historial') {
+    activeMenu.value = 'historial'
   } else if (path === '/proveedores') {
     activeMenu.value = 'proveedores'
   }
