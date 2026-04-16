@@ -24,8 +24,9 @@ npx supabase start
 
 Accede a la aplicación en:
 
+
 ```
-http://localhost:3000/
+http://127.0.0.1:54323
 ```
 
 ### Detener Supabase
@@ -49,7 +50,7 @@ docker compose up --build
 Accede al servicio en:
 
 ```
-http://127.0.0.1:54323
+http://localhost:3000/
 ```
 
 ### Detener los servicios
