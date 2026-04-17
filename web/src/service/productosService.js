@@ -7,9 +7,12 @@ export const productosService = {
   // CREATE - Crear un nuevo producto
   async crear(producto) {
     try {
+      // Excluir el id_producto para asegurar que sea autogenerado por la BD
+      const { id_producto, ...productoSinId } = producto;
+      
       const { data, error } = await supabase
         .from(TABLE_NAME)
-        .insert([producto])
+        .insert([productoSinId])
         .select();
       
       if (error) throw error;
@@ -28,6 +31,36 @@ export const productosService = {
       
       if (error) throw error;
       return { success: true, data };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  // READ - Obtener productos con paginación
+  async obtenerConPaginacion(pagina = 0, tamanoPagina = 100) {
+    try {
+      const desde = pagina * tamanoPagina;
+      const hasta = desde + tamanoPagina - 1;
+      
+      // Obtener los datos paginados CON count incluido
+      const { data, count, error } = await supabase
+        .from(TABLE_NAME)
+        .select('*', { count: 'exact' })
+        .limit(tamanoPagina)
+        .range(desde, hasta);
+      
+      if (error) throw error;
+      
+      const totalCount = count || (data ? data.length : 0);
+      
+      return { 
+        success: true, 
+        data: data || [],
+        paginaActual: pagina,
+        tamanoPagina,
+        totalRegistros: totalCount,
+        totalPaginas: Math.ceil(totalCount / tamanoPagina)
+      };
     } catch (error) {
       return { success: false, error: error.message };
     }

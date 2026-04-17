@@ -26,7 +26,12 @@
       </div>
 
       <div class="estadisticas-section">
-        <EstadisticasProductos :productos="productosFiltrados" :categorias="categorias" :proveedores="proveedores" />
+        <EstadisticasProductos 
+          :productos="productosFiltrados" 
+          :categorias="categorias" 
+          :proveedores="proveedores"
+          :total-productos-real="totalRegistros"
+        />
       </div>
     </div>
 
@@ -34,15 +39,26 @@
       <h2>Listado de Productos</h2>
       <div v-if="cargando" class="loading">Cargando...</div>
       <div v-else-if="error" class="error">{{ error }}</div>
-      <ListadoProductos
-        v-else
-        :productos="productosFiltrados"
-        :categorias="categorias"
-        :proveedores="proveedores"
-        @editar="editarProducto"
-        @eliminar="eliminarProducto"
-        @movimiento="abrirMovimiento"
-      />
+      <div v-else>
+        <ListadoProductos
+          :productos="productosFiltrados"
+          :categorias="categorias"
+          :proveedores="proveedores"
+          @editar="editarProducto"
+          @eliminar="eliminarProducto"
+          @movimiento="abrirMovimiento"
+        />
+        <Paginador
+          v-if="totalRegistros > 100"
+          :pagina-actual="paginaActual"
+          :total-paginas="totalPaginas"
+          :total-registros="totalRegistros"
+          :tamanio-pagina="tamanoPagina"
+          @anterior="irPaginaAnterior"
+          @siguiente="irPaginaSiguiente"
+          @ir-pagina="irPagina"
+        />
+      </div>
     </div>
 
     <div v-if="mostrarModalMovimiento" class="modal-overlay" @click.self="cerrarMovimiento">
@@ -77,6 +93,7 @@ import buscador from '../components/buscador.vue'
 import FormularioProducto from '../components/FormularioProducto.vue'
 import ListadoProductos from '../components/ListadoProductos.vue'
 import EstadisticasProductos from '../components/EstadisticasProductos.vue'
+import Paginador from '../components/Paginador.vue'
 import { useProductos } from '../composables/useProductos'
 
 const toast = useToast()
@@ -87,7 +104,14 @@ const {
   proveedores,
   cargando,
   error,
+  paginaActual,
+  totalPaginas,
+  totalRegistros,
+  tamanoPagina,
   cargarDatosIniciales,
+  irPaginaSiguiente,
+  irPaginaAnterior,
+  irPagina,
   crearProducto,
   actualizarProducto,
   eliminarProducto: eliminarProductoService,

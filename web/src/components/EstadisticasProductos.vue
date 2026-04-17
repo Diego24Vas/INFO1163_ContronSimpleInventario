@@ -41,10 +41,14 @@ const props = defineProps({
   proveedores: {
     type: Array,
     default: () => []
+  },
+  totalProductosReal: {
+    type: Number,
+    default: 0
   }
 })
 
-const totalProductos = computed(() => props.productos.length)
+const totalProductos = computed(() => props.totalProductosReal || props.productos.length)
 const stockBajo = computed(() => props.productos.filter(p => p.stock_actual <= p.stock_minimo).length)
 const totalCategorias = computed(() => props.categorias.length)
 const totalProveedores = computed(() => props.proveedores.length)

@@ -1,7 +1,7 @@
 from faker import Faker
 import random
 
-def generar_datos_proveedores(cantidad_registros=5):
+def generar_datos_proveedores(cantidad_registros=10):
     # Usamos Faker. Si quieres datos chilenos puedes usar 'es_CL', 
     # pero mantendremos 'es_ES' como en los scripts anteriores por consistencia.
     fake = Faker('es_ES')
@@ -34,7 +34,6 @@ def generar_datos_proveedores(cantidad_registros=5):
             "telefono": telefono,              # varchar(20)
             "correo": correo                   # varchar(100)
         }
-        
         datos_proveedores.append(registro)
 
     return datos_proveedores

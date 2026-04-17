@@ -25,6 +25,12 @@ export const useProductos = () => {
   const proveedores = ref([])
   const cargando = ref(false)
   const error = ref('')
+  
+  // Paginación
+  const paginaActual = ref(0)
+  const totalPaginas = ref(0)
+  const totalRegistros = ref(0)
+  const tamanoPagina = 100
 
   const cargarDatosIniciales = async () => {
     cargando.value = true
@@ -32,13 +38,16 @@ export const useProductos = () => {
 
     try {
       const [resProductos, resCategorias, resProveedores] = await Promise.all([
-        productosService.obtenerTodos(),
+        productosService.obtenerConPaginacion(0, tamanoPagina),
         categoriasService.obtenerTodas(),
         proveedoresService.obtenerTodos()
       ])
 
       if (resProductos.success) {
         productos.value = (resProductos.data || []).map(mapProductoDb)
+        paginaActual.value = resProductos.paginaActual
+        totalPaginas.value = resProductos.totalPaginas
+        totalRegistros.value = resProductos.totalRegistros
       } else {
         error.value = resProductos.error || 'Error al cargar productos'
       }
@@ -58,6 +67,46 @@ export const useProductos = () => {
       error.value = err.message || 'Error desconocido'
     } finally {
       cargando.value = false
+    }
+  }
+
+  const cargarPagina = async (numeroPagina) => {
+    cargando.value = true
+    error.value = ''
+
+    try {
+      const resProductos = await productosService.obtenerConPaginacion(numeroPagina, tamanoPagina)
+
+      if (resProductos.success) {
+        productos.value = (resProductos.data || []).map(mapProductoDb)
+        paginaActual.value = resProductos.paginaActual
+        totalPaginas.value = resProductos.totalPaginas
+        totalRegistros.value = resProductos.totalRegistros
+      } else {
+        error.value = resProductos.error || 'Error al cargar productos'
+      }
+    } catch (err) {
+      error.value = err.message || 'Error desconocido'
+    } finally {
+      cargando.value = false
+    }
+  }
+
+  const irPaginaSiguiente = async () => {
+    if (paginaActual.value < totalPaginas.value - 1) {
+      await cargarPagina(paginaActual.value + 1)
+    }
+  }
+
+  const irPaginaAnterior = async () => {
+    if (paginaActual.value > 0) {
+      await cargarPagina(paginaActual.value - 1)
+    }
+  }
+
+  const irPagina = async (numeroPagina) => {
+    if (numeroPagina >= 0 && numeroPagina < totalPaginas.value) {
+      await cargarPagina(numeroPagina)
     }
   }
 
@@ -301,7 +350,15 @@ export const useProductos = () => {
     proveedores,
     cargando,
     error,
+    paginaActual,
+    totalPaginas,
+    totalRegistros,
+    tamanoPagina,
     cargarDatosIniciales,
+    cargarPagina,
+    irPaginaSiguiente,
+    irPaginaAnterior,
+    irPagina,
     crearProducto,
     actualizarProducto,
     eliminarProducto,

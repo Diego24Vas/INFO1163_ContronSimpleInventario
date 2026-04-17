@@ -84,6 +84,16 @@
               </tr>
             </tbody>
           </table>
+          <Paginador
+            v-if="totalRegistros > 100"
+            :pagina-actual="paginaActual"
+            :total-paginas="totalPaginas"
+            :total-registros="totalRegistros"
+            :tamanio-pagina="tamanoPagina"
+            @anterior="irPaginaAnterior"
+            @siguiente="irPaginaSiguiente"
+            @ir-pagina="irPagina"
+          />
         </div>
       </div>
     </div>
@@ -161,6 +171,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import buscador from '../components/buscador.vue'
+import Paginador from '../components/Paginador.vue'
 import Toast from 'primevue/toast'
 import { productosService } from '../service/productosService'
 import { categoriasService } from '../service/categoriasService'
@@ -184,6 +195,12 @@ const cantidadModal = ref(0)
 const motivoModal = ref('')
 const ordenStock = ref(null) // null, 'asc', 'desc'
 const ordenPrecio = ref(null) // null, 'asc', 'desc'
+
+// Paginación
+const paginaActual = ref(0)
+const totalPaginas = ref(0)
+const totalRegistros = ref(0)
+const tamanoPagina = 100
 
 const productos = computed(() => {
   let resultado = productosCompletos.value
@@ -258,13 +275,71 @@ const obtenerNombreCategoria = (idCategoria) => {
 
 const cargarProductos = async () => {
   cargando.value = true
-  const resultado = await productosService.obtenerTodos()
-  
-  if (resultado.success) {
-    productosCompletos.value = resultado.data || []
+  try {
+    const resultado = await productosService.obtenerConPaginacion(0, tamanoPagina)
+    
+    if (resultado.success) {
+      productosCompletos.value = resultado.data || []
+      paginaActual.value = resultado.paginaActual
+      totalPaginas.value = resultado.totalPaginas
+      totalRegistros.value = resultado.totalRegistros
+    } else {
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No se pudieron cargar los productos',
+        life: 3000
+      })
+    }
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'No se pudieron cargar los productos',
+      life: 3000
+    })
   }
-  
   cargando.value = false
+}
+
+const cargarPagina = async (numeroPagina) => {
+  cargando.value = true
+  try {
+    const resultado = await productosService.obtenerConPaginacion(numeroPagina, tamanoPagina)
+    
+    if (resultado.success) {
+      productosCompletos.value = resultado.data || []
+      paginaActual.value = resultado.paginaActual
+      totalPaginas.value = resultado.totalPaginas
+      totalRegistros.value = resultado.totalRegistros
+    }
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Error al cargar la página',
+      life: 3000
+    })
+  }
+  cargando.value = false
+}
+
+const irPaginaSiguiente = async () => {
+  if (paginaActual.value < totalPaginas.value - 1) {
+    await cargarPagina(paginaActual.value + 1)
+  }
+}
+
+const irPaginaAnterior = async () => {
+  if (paginaActual.value > 0) {
+    await cargarPagina(paginaActual.value - 1)
+  }
+}
+
+const irPagina = async (numeroPagina) => {
+  if (numeroPagina >= 0 && numeroPagina < totalPaginas.value) {
+    await cargarPagina(numeroPagina)
+  }
 }
 
 const cargarCategorias = async () => {

@@ -7,14 +7,29 @@
     </div>
 
     <div class="estadisticas-section">
-      <EstadisticasHistorial :movimientos="movimientosFiltrados" />
+      <EstadisticasHistorial 
+        :movimientos="movimientosFiltrados"
+        :total-movimientos-real="totalRegistros"
+      />
     </div>
 
     <div class="listado-section">
       <h2>Listado de Movimientos</h2>
       <div v-if="cargando" class="loading">Cargando...</div>
       <div v-else-if="error" class="error">{{ error }}</div>
-      <ListadoHistorial v-else :movimientos="movimientosFiltrados" />
+      <div v-else>
+        <ListadoHistorial :movimientos="movimientosFiltrados" />
+        <Paginador
+          v-if="totalRegistros > 100"
+          :pagina-actual="paginaActual"
+          :total-paginas="totalPaginas"
+          :total-registros="totalRegistros"
+          :tamanio-pagina="tamanoPagina"
+          @anterior="irPaginaAnterior"
+          @siguiente="irPaginaSiguiente"
+          @ir-pagina="irPagina"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -24,9 +39,23 @@ import { computed, onMounted, ref } from 'vue'
 import FiltrosHistorial from '../components/FiltrosHistorial.vue'
 import ListadoHistorial from '../components/ListadoHistorial.vue'
 import EstadisticasHistorial from '../components/EstadisticasHistorial.vue'
+import Paginador from '../components/Paginador.vue'
 import { useHistorial } from '../composables/useHistorial'
 
-const { movimientos, productos, cargando, error, cargarHistorial } = useHistorial()
+const { 
+  movimientos, 
+  productos, 
+  cargando, 
+  error,
+  paginaActual,
+  totalPaginas,
+  totalRegistros,
+  tamanoPagina,
+  cargarHistorial,
+  irPaginaSiguiente,
+  irPaginaAnterior,
+  irPagina
+} = useHistorial()
 
 const filtros = ref({
   id_producto: null,

@@ -28,10 +28,14 @@ const props = defineProps({
   movimientos: {
     type: Array,
     required: true
+  },
+  totalMovimientosReal: {
+    type: Number,
+    default: 0
   }
 })
 
-const totalMovimientos = computed(() => props.movimientos.length)
+const totalMovimientos = computed(() => props.totalMovimientosReal || props.movimientos.length)
 const totalEntradas = computed(() => props.movimientos.filter(m => m.tipo_movimiento === 'entrada').length)
 const totalSalidas = computed(() => props.movimientos.filter(m => m.tipo_movimiento === 'salida').length)
 const movimientosHoy = computed(() => {

@@ -53,6 +53,37 @@ export const movimientosService = {
     }
   },
 
+  // READ - Obtener movimientos con paginación
+  async obtenerConPaginacion(pagina = 0, tamanoPagina = 100) {
+    try {
+      const desde = pagina * tamanoPagina;
+      const hasta = desde + tamanoPagina - 1;
+      
+      // Obtener los datos paginados CON count incluido
+      const { data, count, error } = await supabase
+        .from(TABLE_NAME)
+        .select('*', { count: 'exact' })
+        .order('fecha_hora', { ascending: false })
+        .limit(tamanoPagina)
+        .range(desde, hasta);
+      
+      if (error) throw error;
+      
+      const totalCount = count || (data ? data.length : 0);
+      
+      return { 
+        success: true, 
+        data: data || [],
+        paginaActual: pagina,
+        tamanoPagina,
+        totalRegistros: totalCount,
+        totalPaginas: Math.ceil(totalCount / tamanoPagina)
+      };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  },
+
   // READ - Obtener un movimiento por ID
   async obtenerPorId(id) {
     try {

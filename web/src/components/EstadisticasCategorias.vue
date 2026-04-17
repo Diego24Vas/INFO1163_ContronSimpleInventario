@@ -14,10 +14,14 @@ const props = defineProps({
   categorias: {
     type: Array,
     required: true
+  },
+  totalCategoriasReal: {
+    type: Number,
+    default: 0
   }
 })
 
-const totalCategorias = computed(() => props.categorias.length)
+const totalCategorias = computed(() => props.totalCategoriasReal || props.categorias.length)
 </script>
 
 <style scoped>

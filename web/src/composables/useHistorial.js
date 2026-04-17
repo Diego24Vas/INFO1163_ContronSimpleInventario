@@ -17,6 +17,12 @@ export const useHistorial = () => {
   const productos = ref([])
   const cargando = ref(false)
   const error = ref('')
+  
+  // Paginación
+  const paginaActual = ref(0)
+  const totalPaginas = ref(0)
+  const totalRegistros = ref(0)
+  const tamanoPagina = 100
 
   const cargarHistorial = async () => {
     cargando.value = true
@@ -24,7 +30,7 @@ export const useHistorial = () => {
 
     try {
       const [resMovimientos, resProductos] = await Promise.all([
-        movimientosService.obtenerTodos(),
+        movimientosService.obtenerConPaginacion(paginaActual.value, tamanoPagina),
         productosService.obtenerTodos()
       ])
 
@@ -33,7 +39,7 @@ export const useHistorial = () => {
       }
 
       if (!resProductos.success && !error.value) {
-        error.value = resProductos.error || 'No se pudo cargar el catalogo de productos.'
+        error.value = resProductos.error || 'No se pudo cargar el catálogo de productos.'
       }
 
       productos.value = resProductos.success ? (resProductos.data || []) : []
@@ -45,6 +51,10 @@ export const useHistorial = () => {
       movimientos.value = resMovimientos.success
         ? (resMovimientos.data || []).map((item) => formatMovimiento(item, productosMap))
         : []
+      
+      paginaActual.value = resMovimientos.paginaActual
+      totalPaginas.value = resMovimientos.totalPaginas
+      totalRegistros.value = resMovimientos.totalRegistros
     } catch (err) {
       error.value = err.message || 'Error desconocido al cargar historial.'
     } finally {
@@ -52,11 +62,53 @@ export const useHistorial = () => {
     }
   }
 
+  const cargarPagina = async (numeroPagina) => {
+    cargando.value = true
+    error.value = ''
+
+    try {
+      const resMovimientos = await movimientosService.obtenerConPaginacion(numeroPagina, tamanoPagina)
+
+      if (!resMovimientos.success) {
+        error.value = resMovimientos.error || 'No se pudo cargar el historial.'
+      }
+
+      const productosMap = new Map(
+        productos.value.map((producto) => [producto.id_producto, producto.nombre])
+      )
+
+      movimientos.value = resMovimientos.success
+        ? (resMovimientos.data || []).map((item) => formatMovimiento(item, productosMap))
+        : []
+      
+      paginaActual.value = resMovimientos.paginaActual
+      totalPaginas.value = resMovimientos.totalPaginas
+      totalRegistros.value = resMovimientos.totalRegistros
+    } catch (err) {
+      error.value = err.message || 'Error desconocido al cargar historial.'
+    } finally {
+      cargando.value = false
+    }
+  }
+
+  // Eliminar funciones relacionadas con la paginación
+  const irPaginaSiguiente = async () => {}
+  const irPaginaAnterior = async () => {}
+  const irPagina = async () => {}
+
   return {
     movimientos,
     productos,
     cargando,
     error,
-    cargarHistorial
+    paginaActual,
+    totalPaginas,
+    totalRegistros,
+    tamanoPagina,
+    cargarHistorial,
+    cargarPagina,
+    irPaginaSiguiente,
+    irPaginaAnterior,
+    irPagina
   }
 }

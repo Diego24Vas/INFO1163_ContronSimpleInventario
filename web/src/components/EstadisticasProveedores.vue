@@ -14,11 +14,15 @@ const props = defineProps({
   proveedores: {
     type: Array,
     required: true
+  },
+  totalProveedoresReal: {
+    type: Number,
+    default: 0
   }
 });
 
 const totalProveedores = computed(() => {
-  return props.proveedores.length;
+  return props.totalProveedoresReal || props.proveedores.length;
 });
 </script>
 

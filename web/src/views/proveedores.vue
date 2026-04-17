@@ -15,7 +15,10 @@
       </div>
 
       <div class="estadisticas-section">
-        <EstadisticasProveedores :proveedores="proveedores" />
+        <EstadisticasProveedores 
+          :proveedores="proveedores"
+          :total-proveedores-real="totalRegistros"
+        />
       </div>
     </div>
 
@@ -23,14 +26,28 @@
       <h2>Listado de Proveedores</h2>
       <div v-if="cargando" class="loading">Cargando...</div>
       <div v-else-if="error" class="error">{{ error }}</div>
-      <ListadoProveedores
-        v-else
-        :proveedores="proveedores"
-        :eliminando="eliminando"
-        @editar="editarProveedor"
-        @eliminar="eliminarProveedor"
-      />
+      <div v-else>
+        <ListadoProveedores
+          :proveedores="proveedores"
+          :eliminando="eliminando"
+          @editar="editarProveedor"
+          @eliminar="eliminarProveedor"
+        />
+        <Paginador
+          v-if="totalRegistros > 100"
+          :pagina-actual="paginaActual"
+          :total-paginas="totalPaginas"
+          :total-registros="totalRegistros"
+          :tamanio-pagina="tamanoPagina"
+          @anterior="irPaginaAnterior"
+          @siguiente="irPaginaSiguiente"
+          @ir-pagina="irPagina"
+        />
+      </div>
     </div>
+
+    <div v-if="mensajeExito" class="mensaje-exito">{{ mensajeExito }}</div>
+    <div v-if="mensajeError" class="mensaje-error">{{ mensajeError }}</div>
   </div>
 </template>
 
@@ -39,13 +56,21 @@ import { ref, onMounted } from 'vue';
 import FormularioProveedor from '../components/FormularioProveedor.vue';
 import ListadoProveedores from '../components/ListadoProveedores.vue';
 import EstadisticasProveedores from '../components/EstadisticasProveedores.vue';
+import Paginador from '../components/Paginador.vue';
 import { useProveedores } from '../composables/useProveedores';
 
 const {
   proveedores,
   cargando,
   error,
+  paginaActual,
+  totalPaginas,
+  totalRegistros,
+  tamanoPagina,
   cargarProveedores,
+  irPaginaSiguiente,
+  irPaginaAnterior,
+  irPagina,
   crearProveedor,
   actualizarProveedor,
   eliminarProveedor: eliminarProveedorService
@@ -54,6 +79,8 @@ const {
 const proveedorEdicion = ref(null);
 const eliminando = ref(false);
 const formProveedorRef = ref(null);
+const mensajeExito = ref('');
+const mensajeError = ref('');
 
 onMounted(() => {
   cargarProveedores();
@@ -69,8 +96,17 @@ const guardarProveedor = async (datos) => {
   }
 
   if (resultado.success) {
+    mensajeExito.value = 'Proveedor guardado exitosamente.';
     cerrarFormulario();
+    cargarProveedores();
+  } else {
+    mensajeError.value = resultado.error || 'Error al guardar el proveedor.';
   }
+
+  setTimeout(() => {
+    mensajeExito.value = '';
+    mensajeError.value = '';
+  }, 3000);
 };
 
 const editarProveedor = (proveedor) => {
@@ -79,8 +115,17 @@ const editarProveedor = (proveedor) => {
 
 const eliminarProveedor = async (id) => {
   eliminando.value = true;
-  await eliminarProveedorService(id);
+  const resultado = await eliminarProveedorService(id);
   eliminando.value = false;
+
+  if (resultado.success) {
+    cargarProveedores();
+  } else {
+    mensajeError.value = resultado.error || 'Error al eliminar el proveedor.';
+    setTimeout(() => {
+      mensajeError.value = '';
+    }, 3000);
+  }
 };
 
 const cerrarFormulario = () => {
@@ -141,6 +186,45 @@ const cerrarFormulario = () => {
   padding: var(--spacing-lg);
   border-radius: var(--radius-md);
   border-left: 3px solid var(--error);
+}
+
+.mensaje-exito {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: rgba(16, 185, 129, 0.95);
+  color: white;
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--success);
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.3s ease-out;
+}
+
+.mensaje-error {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: rgba(239, 68, 68, 0.95);
+  color: white;
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--error);
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @media (max-width: 1024px) {

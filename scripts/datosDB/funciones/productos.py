@@ -1,10 +1,19 @@
 import random
 from faker import Faker
+from conex import supabase  # Importar conexión a Supabase
 
 def generar_datos_ferreteria(cantidad_registros, cantidad_categorias=10, cantidad_proveedores=5):
     # Inicializamos Faker en español
     fake = Faker('es_ES')
-    
+
+    # Consultar el último ID existente en la tabla productos
+    try:
+        response = supabase.table("productos").select("id_producto").order("id_producto", desc=True).limit(1).execute()
+        ultimo_id = response.data[0]["id_producto"] if response.data else 0
+    except Exception as e:
+        print(f"[ERROR] No se pudo obtener el último ID de productos: {e}")
+        ultimo_id = 0
+
     # Lista de productos de ferretería coherentes para dar contexto
     catalogo_base = [
         ("Martillo de Carpintero", "Martillo con mango de nogal de 16 oz, ideal para trabajos de carpintería general."),
@@ -30,10 +39,10 @@ def generar_datos_ferreteria(cantidad_registros, cantidad_categorias=10, cantida
         # Seleccionamos un producto aleatorio de nuestro catálogo base
         producto_base = random.choice(catalogo_base)
         nombre = producto_base[0]
-        
+
         # Mezclamos la descripción base con texto aleatorio de Faker para hacerlos distintos
         descripcion = f"{producto_base[1]} {fake.sentence()}"
-        
+
         # Lógica comercial: El precio de compra está entre $500 y $150,000 CLP (o la moneda que uses)
         precio_compra = int(random.uniform(500.0, 150000.0))
         # El precio de venta tiene un margen de ganancia aleatorio entre el 20% y el 60%
@@ -47,18 +56,18 @@ def generar_datos_ferreteria(cantidad_registros, cantidad_categorias=10, cantida
 
         # Construcción del registro
         registro = {
-            "id_producto": i,
-            "codigo_sku": f"SKU-{str(i).zfill(6)}", # Genera SKU único y determinista
+            "id_producto": ultimo_id + i,  # Asegurar IDs únicos
+            "codigo_sku": f"SKU-{str(ultimo_id + i).zfill(6)}",  # Genera SKU único y determinista
             "nombre": nombre,
             "descripcion": descripcion,
             "precio_compra": precio_compra,
             "precio_venta": precio_venta,
             "stock_actual": stock_actual,
             "stock_minimo": stock_minimo,
-            "id_categoria": random.randint(1, cantidad_categorias), # Referencias válidas a categorías
+            "id_categoria": random.randint(1, cantidad_categorias),  # Referencias válidas a categorías
             "id_proveedor": random.randint(1, cantidad_proveedores)   # Referencias válidas a proveedores
         }
-        
+
         datos_productos.append(registro)
 
     return datos_productos

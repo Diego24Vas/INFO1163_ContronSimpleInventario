@@ -56,8 +56,8 @@ def mostrar_menu_interactivo():
         cantidad_proveedores = input("  Cantidad de PROVEEDORES (default 5): ").strip()
         cantidad_proveedores = int(cantidad_proveedores) if cantidad_proveedores else 5
         
-        cantidad_categorias = input("  Cantidad de CATEGORÍAS (default 10): ").strip()
-        cantidad_categorias = int(cantidad_categorias) if cantidad_categorias else 10
+        # Eliminamos la consulta de categorías y usamos un valor predeterminado
+        cantidad_categorias = 10
         
         cantidad_productos = input("  Cantidad de PRODUCTOS (default 10): ").strip()
         cantidad_productos = int(cantidad_productos) if cantidad_productos else 10
@@ -107,7 +107,7 @@ def rellenar_base_datos(
     
     # Generar e insertar PROVEEDORES (1ero - sin dependencias)
     print(f"\n[2/5] Generando {cantidad_proveedores} proveedores...")
-    proveedores = generar_datos_proveedores(cantidad_proveedores)
+    proveedores = generar_datos_proveedores(cantidad_proveedores)  # Ajuste: se pasa el argumento
     if not insertar_datos("proveedores", proveedores):
         print("[ERROR] Falló inserción de proveedores. Abortando...")
         return
@@ -162,7 +162,7 @@ if __name__ == "__main__":
     # Si hay argumentos de línea de comandos, usarlos
     if len(sys.argv) > 1:
         cantidad_proveedores = int(sys.argv[1])
-        cantidad_categorias = int(sys.argv[2]) if len(sys.argv) > 2 else 10
+        cantidad_categorias = 10  # Valor predeterminado para categorías
         cantidad_productos = int(sys.argv[3]) if len(sys.argv) > 3 else 10
         cantidad_movimientos = int(sys.argv[4]) if len(sys.argv) > 4 else 20
         

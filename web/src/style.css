@@ -151,6 +151,34 @@ input::placeholder {
   color: var(--text-muted);
 }
 
+/* Estilos específicos para los selects oscuros */
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23f1f5f9' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+
+select option {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: var(--spacing-md);
+}
+
+select option:hover {
+  background-color: var(--primary);
+  color: white;
+}
+
+select option:checked {
+  background: linear-gradient(var(--primary), var(--primary));
+  background-color: var(--primary);
+  color: white;
+}
+
 /* ===========================
    SCROLLBAR PERSONALIZADA
    =========================== */
