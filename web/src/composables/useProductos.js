@@ -188,6 +188,12 @@ export const useProductos = () => {
         return { success: false, error: normalized.error }
       }
 
+      // Obtener el producto anterior para comparar stock
+      const productoAnterior = productos.value.find(p => p.id_producto === id)
+      const stockAnterior = productoAnterior?.stock_actual || 0
+      const stockNuevo = Number(normalized.payload.stock_actual)
+
+      // Actualizar el producto
       const resultado = await productosService.actualizar(id, normalized.payload)
 
       if (resultado.success) {
@@ -195,6 +201,29 @@ export const useProductos = () => {
         const index = productos.value.findIndex(p => p.id_producto === id)
         if (index !== -1) {
           productos.value[index] = actualizado
+        }
+
+        // Si el stock cambió, registrar el movimiento
+        if (stockNuevo !== stockAnterior) {
+          const diferencia = stockNuevo - stockAnterior
+          const tipoMovimiento = diferencia > 0 ? 'entrada' : 'salida'
+          const cantidad = Math.abs(diferencia)
+
+          const resMov = await movimientosService.crear({
+            id_producto: id,
+            tipo_movimiento: tipoMovimiento,
+            cantidad: cantidad,
+            motivo: 'Ajuste de stock desde edición de producto'
+          })
+
+          // Si falla el movimiento, retornar con advertencia
+          if (!resMov.success) {
+            return { 
+              success: true, 
+              data: actualizado,
+              warning: 'Producto actualizado, pero no se registro el movimiento en historial'
+            }
+          }
         }
 
         return { success: true, data: actualizado }

@@ -35,10 +35,10 @@ def generar_datos_ferreteria(cantidad_registros, cantidad_categorias=10, cantida
         descripcion = f"{producto_base[1]} {fake.sentence()}"
         
         # Lógica comercial: El precio de compra está entre $500 y $150,000 CLP (o la moneda que uses)
-        precio_compra = round(random.uniform(500.0, 150000.0), 2)
+        precio_compra = int(random.uniform(500.0, 150000.0))
         # El precio de venta tiene un margen de ganancia aleatorio entre el 20% y el 60%
         margen = random.uniform(1.20, 1.60)
-        precio_venta = round(precio_compra * margen, 2)
+        precio_venta = int(precio_compra * margen)
 
         # Lógica de stock
         stock_minimo = random.randint(5, 20)
@@ -48,7 +48,7 @@ def generar_datos_ferreteria(cantidad_registros, cantidad_categorias=10, cantida
         # Construcción del registro
         registro = {
             "id_producto": i,
-            "codigo_sku": f"SKU-FER-{str(i).zfill(6)}", # Genera SKU único y determinista
+            "codigo_sku": f"SKU-{str(i).zfill(6)}", # Genera SKU único y determinista
             "nombre": nombre,
             "descripcion": descripcion,
             "precio_compra": precio_compra,

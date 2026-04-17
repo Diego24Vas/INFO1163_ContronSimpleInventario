@@ -1,41 +1,64 @@
 <template>
   <div class="listado-productos">
     <div v-if="productos.length === 0" class="empty-state">
+      <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M20 21H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M16 3v4M8 3v4M3 9h18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
       <p>No hay productos registrados</p>
+      <span class="hint">Comienza agregando un nuevo producto</span>
     </div>
 
     <div v-else class="tabla-container">
       <table class="tabla">
         <thead>
           <tr>
-            <th>SKU</th>
-            <th>Producto</th>
-            <th>Categoria</th>
-            <th>Proveedor</th>
-            <th>Stock</th>
-            <th>Precio Compra</th>
-            <th>Precio Venta</th>
-            <th>Acciones</th>
+            <th class="col-sku">SKU</th>
+            <th class="col-nombre">Producto</th>
+            <th class="col-categoria">Categoría</th>
+            <th class="col-proveedor">Proveedor</th>
+            <th class="col-stock">Stock</th>
+            <th class="col-precios">Precio Compra</th>
+            <th class="col-precios">Precio Venta</th>
+            <th class="col-acciones">Acciones</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="producto in productos" :key="producto.id_producto" class="fila">
-            <td>{{ producto.codigo_sku || '-' }}</td>
-            <td>{{ producto.nombre }}</td>
-            <td>{{ getNombreCategoria(producto.id_categoria) }}</td>
-            <td>{{ getNombreProveedor(producto.id_proveedor) }}</td>
-            <td>
-              <span :class="['stock-pill', { bajo: producto.stock_actual <= producto.stock_minimo }]">
-                {{ producto.stock_actual }} / min {{ producto.stock_minimo }}
-              </span>
+          <tr v-for="producto in productos" :key="producto.id_producto" class="fila" :class="{ 'stock-critico': producto.stock_actual <= producto.stock_minimo }">
+            <td class="col-sku"><span class="sku-badge">{{ producto.codigo_sku || '-' }}</span></td>
+            <td class="col-nombre">
+              <div class="nombre-producto">{{ producto.nombre }}</div>
             </td>
-            <td>{{ formatPrice(producto.precio_compra) }}</td>
-            <td>{{ formatPrice(producto.precio_venta) }}</td>
-            <td class="acciones">
-              <button @click="emit('movimiento', { producto, tipo: 'entrada' })" class="btn-accion btn-entrada" title="Entrada">+</button>
-              <button @click="emit('movimiento', { producto, tipo: 'salida' })" class="btn-accion btn-salida" title="Salida">-</button>
-              <button @click="emit('editar', producto)" class="btn-accion btn-editar" title="Editar">✎</button>
-              <button @click="emit('eliminar', producto.id_producto)" class="btn-accion btn-eliminar" title="Eliminar">✕</button>
+            <td class="col-categoria"><span class="categoria-badge">{{ getNombreCategoria(producto.id_categoria) }}</span></td>
+            <td class="col-proveedor">{{ getNombreProveedor(producto.id_proveedor) }}</td>
+            <td class="col-stock">
+              <div class="stock-container">
+                <span v-if="producto.stock_actual === 0" class="stock-badge sin-stock">
+                  Sin stock
+                </span>
+                <span v-else :class="['stock-badge', { crítico: producto.stock_actual <= producto.stock_minimo }]">
+                  {{ producto.stock_actual }}
+                </span>
+                <span class="stock-minimo">mín: {{ producto.stock_minimo }}</span>
+              </div>
+            </td>
+            <td class="col-precios">{{ formatPrice(producto.precio_compra) }}</td>
+            <td class="col-precios">{{ formatPrice(producto.precio_venta) }}</td>
+            <td class="col-acciones">
+              <div class="acciones-grupo">
+                <button @click="emit('movimiento', { producto, tipo: 'entrada' })" class="btn-accion btn-entrada" title="Registrar entrada" aria-label="Entrada de stock">
+                  +
+                </button>
+                <button @click="emit('movimiento', { producto, tipo: 'salida' })" class="btn-accion btn-salida" title="Registrar salida" aria-label="Salida de stock">
+                  -
+                </button>
+                <button @click="emit('editar', producto)" class="btn-accion btn-editar" title="Editar producto" aria-label="Editar">
+                  <i class="fa-solid fa-pen"></i>
+                </button>
+                <button @click="emit('eliminar', producto.id_producto)" class="btn-accion btn-eliminar" title="Eliminar producto" aria-label="Eliminar">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -84,7 +107,27 @@ const formatPrice = (value) => {
 <style scoped>
 .empty-state {
   text-align: center;
-  padding: var(--spacing-2xl);
+  padding: var(--spacing-3xl) var(--spacing-2xl);
+  color: var(--text-muted);
+}
+
+.empty-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto var(--spacing-lg);
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.empty-state p {
+  font-size: 1.1rem;
+  margin: 0 0 var(--spacing-sm);
+  color: var(--text-primary);
+}
+
+.hint {
+  display: block;
+  font-size: 0.9rem;
   color: var(--text-muted);
 }
 
@@ -93,6 +136,7 @@ const formatPrice = (value) => {
   border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
+  background: var(--bg-secondary);
 }
 
 .tabla {
@@ -102,76 +146,266 @@ const formatPrice = (value) => {
 }
 
 .tabla thead {
-  background: var(--bg-tertiary);
+  background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
   border-bottom: 2px solid var(--border-light);
-}
-
-.tabla th,
-.tabla td {
-  padding: var(--spacing-md);
-  text-align: left;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .tabla th {
-  font-size: 0.85rem;
+  padding: var(--spacing-md) var(--spacing-lg);
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
   color: var(--text-primary);
 }
 
 .tabla td {
-  color: var(--text-secondary);
+  padding: var(--spacing-md) var(--spacing-lg);
   border-bottom: 1px solid var(--border-light);
+  color: var(--text-secondary);
+}
+
+.fila {
+  transition: background-color var(--transition-fast);
 }
 
 .fila:hover {
-  background-color: var(--bg-tertiary);
+  background-color: rgba(59, 130, 246, 0.04);
 }
 
-.acciones {
+.fila.stock-critico:hover {
+  background-color: rgba(245, 158, 11, 0.06);
+}
+
+/* Columnas específicas */
+.col-sku,
+.col-stock,
+.col-precios,
+.col-acciones {
+  width: auto;
+}
+
+.col-nombre {
+  min-width: 180px;
+}
+
+.col-categoria,
+.col-proveedor {
+  min-width: 130px;
+}
+
+/* SKU Badge */
+.sku-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: rgba(6, 182, 212, 0.1);
+  color: var(--info);
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 0.5px;
+}
+
+.nombre-producto {
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.categoria-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+/* Stock container */
+.stock-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stock-badge {
+  display: inline-block;
+  padding: 5px 10px;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success);
+}
+
+.stock-badge.crítico {
+  background: rgba(245, 158, 11, 0.2);
+  color: var(--warning);
+}
+
+.stock-badge.sin-stock {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--error);
+  font-weight: 700;
+}
+
+.stock-minimo {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* Acciones */
+.acciones-grupo {
   display: flex;
   gap: var(--spacing-sm);
+  align-items: center;
 }
 
 .btn-accion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
   border: none;
-  width: 30px;
-  height: 30px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-weight: bold;
+  font-size: 1.2rem;
+  font-weight: 700;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
 }
 
 .btn-entrada {
-  background: rgba(16, 185, 129, 0.2);
+  background: rgba(16, 185, 129, 0.15);
   color: var(--success);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.btn-entrada:hover {
+  background: rgba(16, 185, 129, 0.25);
+  border-color: var(--success);
 }
 
 .btn-salida {
-  background: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.15);
   color: var(--error);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.btn-salida:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: var(--error);
 }
 
 .btn-editar {
-  background: rgba(6, 182, 212, 0.2);
+  background: rgba(6, 182, 212, 0.15);
   color: var(--info);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+.btn-editar:hover {
+  background: rgba(6, 182, 212, 0.25);
+  border-color: var(--info);
 }
 
 .btn-eliminar {
-  background: rgba(239, 68, 68, 0.12);
+  background: rgba(239, 68, 68, 0.1);
   color: var(--error);
+  border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
-.stock-pill {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(16, 185, 129, 0.18);
-  color: var(--success);
-  font-size: 0.82rem;
+.btn-eliminar:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
 }
 
-.stock-pill.bajo {
-  background: rgba(245, 158, 11, 0.2);
-  color: var(--warning);
+/* Responsive */
+@media (max-width: 1280px) {
+  .tabla th,
+  .tabla td {
+    padding: var(--spacing-md) var(--spacing-md);
+  }
+
+  .col-nombre {
+    min-width: 140px;
+  }
+}
+
+@media (max-width: 768px) {
+  .tabla th,
+  .tabla td {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.9rem;
+  }
+
+  .tabla th {
+    font-size: 0.75rem;
+  }
+
+  .btn-accion {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
+  }
+
+  .col-categoria,
+  .col-proveedor {
+    min-width: 100px;
+  }
+
+  .col-nombre {
+    min-width: 120px;
+  }
+
+  .acciones-grupo {
+    gap: 4px;
+  }
+
+  .stock-minimo {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .tabla-container {
+    border-radius: var(--radius-md);
+  }
+
+  .tabla th {
+    font-size: 0.7rem;
+    padding: var(--spacing-sm);
+    letter-spacing: 0;
+  }
+
+  .tabla td {
+    padding: var(--spacing-sm);
+  }
+
+  .btn-accion {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+  }
+
+  .sku-badge,
+  .categoria-badge {
+    font-size: 0.75rem;
+    padding: 3px 6px;
+  }
+
+  .nombre-producto {
+    font-size: 0.9rem;
+  }
 }
 </style>

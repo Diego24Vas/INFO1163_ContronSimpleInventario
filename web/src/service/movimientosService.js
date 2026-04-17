@@ -6,9 +6,29 @@ export const movimientosService = {
   // CREATE - Crear un nuevo movimiento
   async crear(movimiento) {
     try {
+      // Obtener el máximo ID actual para generar el siguiente
+      const { data: datosExistentes, error: errorConsulta } = await supabase
+        .from(TABLE_NAME)
+        .select('id_movimiento')
+        .order('id_movimiento', { ascending: false })
+        .limit(1);
+      
+      if (errorConsulta) throw errorConsulta;
+      
+      // Calcular el próximo ID
+      const proximoId = (datosExistentes && datosExistentes.length > 0) 
+        ? datosExistentes[0].id_movimiento + 1 
+        : 1;
+
+      // Agregar el ID calculado al objeto movimiento
+      const movimientoConId = {
+        id_movimiento: proximoId,
+        ...movimiento
+      };
+
       const { data, error } = await supabase
         .from(TABLE_NAME)
-        .insert([movimiento])
+        .insert([movimientoConId])
         .select();
       
       if (error) throw error;

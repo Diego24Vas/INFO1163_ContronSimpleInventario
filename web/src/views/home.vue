@@ -1,8 +1,44 @@
 <template>
   <div class="home">
+    <Toast />
     <div class="container">
       <div class="buscador-wrapper">
         <buscador @search="handleSearch" />
+      </div>
+      
+      <button @click="mostrarFiltros = !mostrarFiltros" class="btn-filtros-toggle">
+        <span class="toggle-icon" :class="{ abierto: mostrarFiltros }">⊕</span>
+        <span class="toggle-text">{{ mostrarFiltros ? 'Ocultar filtros' : 'Mostrar filtros' }}</span>
+      </button>
+      
+      <div v-show="mostrarFiltros" class="filtros-wrapper" :class="{ expandido: mostrarFiltros }">
+        <div class="filtros-grupo">
+          <div class="filtros-label">Categorías:</div>
+          <div class="filtros-botones">
+            <button 
+              v-for="categoria in categorias" 
+              :key="categoria.id_categoria"
+              @click="categoriaSeleccionada = categoriaSeleccionada === categoria.id_categoria ? null : categoria.id_categoria"
+              :class="['filtro-btn', { activo: categoriaSeleccionada === categoria.id_categoria }]"
+            >
+              {{ categoria.nombre }}
+            </button>
+          </div>
+        </div>
+        
+        <div class="filtros-grupo">
+          <div class="filtros-label">Proveedores:</div>
+          <div class="filtros-botones">
+            <button 
+              v-for="proveedor in proveedores" 
+              :key="proveedor.id_proveedor"
+              @click="proveedorSeleccionado = proveedorSeleccionado === proveedor.id_proveedor ? null : proveedor.id_proveedor"
+              :class="['filtro-btn', { activo: proveedorSeleccionado === proveedor.id_proveedor }]"
+            >
+              {{ proveedor.nombre_empresa }}
+            </button>
+          </div>
+        </div>
       </div>
       
       <div class="tabla-wrapper">
@@ -39,8 +75,9 @@
                 <td class="stock-cell">
                   <div class="stock-content">
                     <button @click="abrirModalAgregar(producto)" class="btn-accion btn-agregar" title="Agregar">+</button>
-                    <span class="stock">{{ producto.stock_actual }}</span>
-                    <button @click="abrirModalEliminar(producto)" class="btn-accion btn-eliminar" title="Eliminar">−</button>
+                    <span class="stock" v-if="producto.stock_actual === 0">Sin stock</span>
+                    <span class="stock" v-else>{{ producto.stock_actual }}</span>
+                    <button @click="abrirModalEliminar(producto)" class="btn-accion btn-eliminar" title="Eliminar" :disabled="producto.stock_actual === 0">−</button>
                   </div>
                 </td>
                 <td class="precio">${{ producto.precio_compra }}</td>
@@ -66,9 +103,17 @@
             @keyup.enter="confirmarAgregar"
           />
           <p class="stock-info">Stock actual: {{ productoActual?.stock_actual }} → {{ (productoActual?.stock_actual || 0) + (cantidadModal || 0) }}</p>
+          
+          <label>Motivo (opcional):</label>
+          <input 
+            v-model="motivoModal" 
+            type="text" 
+            placeholder="Ej: Compra a proveedor"
+            @keyup.enter="confirmarAgregar"
+          />
         </div>
         <div class="modal-acciones">
-          <button @click="confirmarAgregar" class="btn btn-guardar" :disabled="actualizando">
+          <button @click="confirmarAgregar" class="btn btn-guardar" :disabled="actualizando || cantidadModal <= 0">
             {{ actualizando ? 'Guardando...' : 'Agregar' }}
           </button>
           <button @click="cerrarModales" class="btn btn-cancelar">Cancelar</button>
@@ -92,9 +137,17 @@
             @keyup.enter="confirmarEliminar"
           />
           <p class="stock-info">Stock actual: {{ productoActual?.stock_actual }} → {{ Math.max(0, (productoActual?.stock_actual || 0) - (cantidadModal || 0)) }}</p>
+          
+          <label>Motivo (opcional):</label>
+          <input 
+            v-model="motivoModal" 
+            type="text" 
+            placeholder="Ej: Venta, revisión de stock"
+            @keyup.enter="confirmarEliminar"
+          />
         </div>
         <div class="modal-acciones">
-          <button @click="confirmarEliminar" class="btn btn-eliminar-confirm" :disabled="actualizando">
+          <button @click="confirmarEliminar" class="btn btn-eliminar-confirm" :disabled="actualizando || cantidadModal <= 0">
             {{ actualizando ? 'Guardando...' : 'Eliminar' }}
           </button>
           <button @click="cerrarModales" class="btn btn-cancelar">Cancelar</button>
@@ -106,19 +159,29 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { useToast } from 'primevue/usetoast'
 import buscador from '../components/buscador.vue'
+import Toast from 'primevue/toast'
 import { productosService } from '../service/productosService'
 import { categoriasService } from '../service/categoriasService'
+import { proveedoresService } from '../service/proveedoresService'
+
+const toast = useToast()
 
 const productosCompletos = ref([])
 const categorias = ref([])
+const proveedores = ref([])
 const cargando = ref(true)
 const actualizando = ref(false)
 const busqueda = ref('')
+const categoriaSeleccionada = ref(null)
+const proveedorSeleccionado = ref(null)
+const mostrarFiltros = ref(false)
 const mostrarModalAgregar = ref(false)
 const mostrarModalEliminar = ref(false)
 const productoActual = ref(null)
 const cantidadModal = ref(0)
+const motivoModal = ref('')
 const ordenStock = ref(null) // null, 'asc', 'desc'
 const ordenPrecio = ref(null) // null, 'asc', 'desc'
 
@@ -131,6 +194,20 @@ const productos = computed(() => {
     resultado = resultado.filter(producto => 
       producto.nombre.toLowerCase().includes(query) ||
       producto.codigo_sku.toLowerCase().includes(query)
+    )
+  }
+  
+  // Filtrar por categoría
+  if (categoriaSeleccionada.value) {
+    resultado = resultado.filter(producto => 
+      producto.id_categoria === categoriaSeleccionada.value
+    )
+  }
+  
+  // Filtrar por proveedor
+  if (proveedorSeleccionado.value) {
+    resultado = resultado.filter(producto => 
+      producto.id_proveedor === proveedorSeleccionado.value
     )
   }
   
@@ -198,6 +275,14 @@ const cargarCategorias = async () => {
   }
 }
 
+const cargarProveedores = async () => {
+  const resultado = await proveedoresService.obtenerTodos()
+  
+  if (resultado.success) {
+    proveedores.value = resultado.data || []
+  }
+}
+
 const abrirModalAgregar = (producto) => {
   productoActual.value = producto
   cantidadModal.value = 0
@@ -215,38 +300,99 @@ const cerrarModales = () => {
   mostrarModalEliminar.value = false
   productoActual.value = null
   cantidadModal.value = 0
+  motivoModal.value = ''
 }
 
 const confirmarAgregar = async () => {
-  if (cantidadModal.value <= 0 || !productoActual.value) return
+  if (!productoActual.value || cantidadModal.value <= 0) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Cantidad inválida',
+      detail: 'Por favor ingresa una cantidad mayor a 0',
+      life: 3000
+    })
+    return
+  }
   
   actualizando.value = true
-  const nuevoStock = productoActual.value.stock_actual + cantidadModal.value
-  const resultado = await productosService.actualizarStock(productoActual.value.id_producto, nuevoStock)
+  const resultado = await productosService.agregarStock(
+    productoActual.value.id_producto, 
+    cantidadModal.value,
+    motivoModal.value || 'Ingreso desde home'
+  )
   
   if (resultado.success) {
     await cargarProductos()
     cerrarModales()
+    toast.add({
+      severity: 'success',
+      summary: 'Stock agregado',
+      detail: `Se agregaron ${cantidadModal.value} unidades. El movimiento fue registrado en el historial.`,
+      life: 3000
+    })
+  } else {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: resultado.error || 'No se pudo agregar el stock',
+      life: 4000
+    })
   }
   actualizando.value = false
 }
 
 const confirmarEliminar = async () => {
-  if (cantidadModal.value <= 0 || !productoActual.value) return
+  if (!productoActual.value || cantidadModal.value <= 0) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Cantidad inválida',
+      detail: 'Por favor ingresa una cantidad mayor a 0',
+      life: 3000
+    })
+    return
+  }
+  
+  // Validar que la cantidad no supere el stock actual
+  if (cantidadModal.value > productoActual.value.stock_actual) {
+    toast.add({
+      severity: 'error',
+      summary: 'Stock insuficiente',
+      detail: `No puedes eliminar más de ${productoActual.value.stock_actual} unidades. Stock actual: ${productoActual.value.stock_actual}`,
+      life: 4000
+    })
+    return
+  }
   
   actualizando.value = true
-  const nuevoStock = Math.max(0, productoActual.value.stock_actual - cantidadModal.value)
-  const resultado = await productosService.actualizarStock(productoActual.value.id_producto, nuevoStock)
+  const resultado = await productosService.reducirStock(
+    productoActual.value.id_producto, 
+    cantidadModal.value,
+    motivoModal.value || 'Salida desde home'
+  )
   
   if (resultado.success) {
     await cargarProductos()
     cerrarModales()
+    toast.add({
+      severity: 'success',
+      summary: 'Stock reducido',
+      detail: `Se eliminaron ${cantidadModal.value} unidades. El movimiento fue registrado en el historial.`,
+      life: 3000
+    })
+  } else {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: resultado.error || 'No se pudo reducir el stock',
+      life: 4000
+    })
   }
   actualizando.value = false
 }
 
 onMounted(() => {
   cargarCategorias()
+  cargarProveedores()
   cargarProductos()
 })
 </script>
@@ -272,6 +418,108 @@ onMounted(() => {
 .buscador-wrapper {
   display: flex;
   justify-content: center;
+}
+
+.btn-filtros-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  align-self: flex-start;
+  margin-left: auto;
+}
+
+.btn-filtros-toggle:hover {
+  background-color: #1d4ed8;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.toggle-icon {
+  font-size: 1rem;
+  transition: transform var(--transition-fast);
+  display: inline-block;
+}
+
+.toggle-icon.abierto {
+  transform: rotate(45deg);
+}
+
+.filtros-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  animation: slideDown var(--transition-base) ease-out;
+  max-height: 500px;
+  overflow: hidden;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    padding: 0 var(--spacing-md);
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+    padding: var(--spacing-md);
+  }
+}
+
+.filtros-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.filtros-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filtros-botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.filtro-btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.filtro-btn:hover {
+  background-color: rgba(37, 99, 235, 0.1);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.filtro-btn.activo {
+  background-color: var(--primary);
+  color: white;
+  border-color: var(--primary);
 }
 
 .cargando {
@@ -424,8 +672,14 @@ onMounted(() => {
   color: var(--error);
 }
 
-.btn-eliminar:hover {
+.btn-eliminar:hover:not(:disabled) {
   background-color: rgba(239, 68, 68, 0.1);
+}
+
+.btn-eliminar:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  color: var(--text-muted);
 }
 
 .tabla .precio {
@@ -559,136 +813,6 @@ onMounted(() => {
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-/* Estilos para componentes PrimeVue */
-:deep(.p-inputgroup) {
-  background-color: white;
-  border-radius: var(--radius-md);
-  border: 1px solid #d0d0d0;
-  overflow: hidden;
-}
-
-:deep(.p-inputtext) {
-  background-color: white;
-  color: black;
-  border: none;
-  padding: var(--spacing-md);
-}
-
-:deep(.p-inputtext::placeholder) {
-  color: var(--text-muted);
-}
-
-:deep(.p-inputtext:focus) {
-  box-shadow: none;
-}
-
-:deep(.p-button) {
-  background-color: #2563eb;
-  color: white;
-  border: none;
-  padding: var(--spacing-md);
-}
-
-:deep(.p-button:hover) {
-  background-color: #1d4ed8;
-}
-</style>
-
-<style scoped>
-.home {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: var(--spacing-xl);
-  background: var(--bg-primary);
-  min-height: 100vh;
-}
-
-.container {
-  width: 100%;
-  max-width: 1200px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xl);
-}
-
-.buscador-wrapper {
-  display: flex;
-  justify-content: center;
-}
-
-.cargando {
-  text-align: center;
-  padding: var(--spacing-2xl);
-  color: var(--text-muted);
-}
-
-.empty-state {
-  text-align: center;
-  padding: var(--spacing-2xl);
-  color: var(--text-muted);
-}
-
-.tabla-wrapper {
-  width: 100%;
-}
-
-.tabla-container {
-  overflow-x: auto;
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-}
-
-.tabla {
-  width: 100%;
-  border-collapse: collapse;
-  background: var(--bg-secondary);
-}
-
-.tabla thead {
-  background: var(--bg-tertiary);
-  border-bottom: 2px solid var(--border-light);
-}
-
-.tabla th {
-  padding: var(--spacing-md);
-  text-align: left;
-  font-weight: 600;
-  color: var(--text-primary);
-  font-size: 0.875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.tabla td {
-  padding: var(--spacing-md);
-  border-bottom: 1px solid var(--border-light);
-  color: var(--text-secondary);
-  font-size: 0.95rem;
-}
-
-.tabla .fila:hover {
-  background-color: var(--bg-tertiary);
-}
-
-.tabla .sku {
-  color: var(--primary);
-  font-weight: 500;
-  font-size: 0.85rem;
-  font-family: monospace;
-}
-
-.tabla .stock {
-  font-weight: 500;
-  color: var(--success);
-}
-
-.tabla .precio {
-  color: var(--primary);
-  font-weight: 500;
 }
 
 /* Estilos para componentes PrimeVue */

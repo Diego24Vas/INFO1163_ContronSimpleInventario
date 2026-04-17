@@ -300,6 +300,11 @@ const confirmarMovimiento = async () => {
   font-size: 1.3rem;
 }
 
+.listado-section {
+  width: 100%;
+  overflow: hidden;
+}
+
 .loading {
   text-align: center;
   color: var(--text-muted);
@@ -395,11 +400,30 @@ const confirmarMovimiento = async () => {
   .formulario-section {
     position: static;
   }
+
+  .productos-view {
+    padding: var(--spacing-lg);
+  }
 }
 
 @media (max-width: 768px) {
   .productos-view {
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
+  }
+
+  .productos-view h1 {
+    font-size: 1.5rem;
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .listado-section h2 {
+    font-size: 1.1rem;
+    margin-bottom: var(--spacing-md);
+  }
+
+  .alerta-stock-bajo {
+    font-size: 0.9rem;
+    padding: var(--spacing-md);
   }
 }
 </style>
