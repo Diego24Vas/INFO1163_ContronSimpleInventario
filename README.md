@@ -61,7 +61,7 @@ docker compose down
 
 ## 4. Generación de datos aleatorios para la base de datos
 
-El proyecto incluye scripts para generar datos aleatorios y poblar la base de datos. Esto es útil para pruebas y desarrollo.
+El proyecto incluye scripts para generar datos aleatorios y poblar la base de datos.
 
 
 ### Requisitos previos
@@ -87,7 +87,6 @@ El proyecto incluye scripts para generar datos aleatorios y poblar la base de da
    ```
 
    Este script generará datos aleatorios para las tablas principales de la base de datos, como categorías, productos, proveedores y movimientos.
-3. Verifica que los datos se hayan insertado correctamente en la base de datos.
 
 ---
 
@@ -107,4 +106,4 @@ El proyecto también incluye un script para limpiar la base de datos, eliminando
    ```bash
    python clean.py
    ```
-   Este script eliminará los datos existentes en las tablas y las restablecerá según sea necesario.
+   Este script eliminará los datos existentes en las tablas.
