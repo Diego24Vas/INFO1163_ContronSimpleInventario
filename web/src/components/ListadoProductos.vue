@@ -1,12 +1,7 @@
 <template>
   <div class="listado-productos">
     <div v-if="productos.length === 0" class="empty-state">
-      <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path d="M20 21H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M16 3v4M8 3v4M3 9h18" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
       <p>No hay productos registrados</p>
-      <span class="hint">Comienza agregando un nuevo producto</span>
     </div>
 
     <div v-else class="tabla-container">
@@ -111,25 +106,12 @@ const formatPrice = (value) => {
   color: var(--text-muted);
 }
 
-.empty-icon {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto var(--spacing-lg);
-  color: var(--text-muted);
-  opacity: 0.5;
-}
-
 .empty-state p {
   font-size: 1.1rem;
-  margin: 0 0 var(--spacing-sm);
-  color: var(--text-primary);
-}
-
-.hint {
-  display: block;
-  font-size: 0.9rem;
+  margin: 0;
   color: var(--text-muted);
 }
+
 
 .tabla-container {
   overflow-x: auto;
