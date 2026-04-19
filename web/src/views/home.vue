@@ -168,7 +168,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import buscador from '../components/buscador.vue'
 import Paginador from '../components/Paginador.vue'
@@ -202,7 +202,17 @@ const totalPaginas = ref(0)
 const totalRegistros = ref(0)
 const tamanoPagina = 100
 
-const productos = computed(() => {
+// Watchers para resetear página cuando cambian los filtros
+watch(categoriaSeleccionada, () => {
+  paginaActual.value = 0
+})
+
+watch(proveedorSeleccionado, () => {
+  paginaActual.value = 0
+})
+
+// Computed para productos filtrados (todos, sin paginación)
+const productosFiltrados = computed(() => {
   let resultado = productosCompletos.value
   
   // Filtrar por búsqueda
@@ -244,8 +254,25 @@ const productos = computed(() => {
   return resultado
 })
 
+// Computed para productos paginados (aplicar paginación local)
+const productos = computed(() => {
+  const inicio = paginaActual.value * tamanoPagina
+  const fin = inicio + tamanoPagina
+  
+  // Actualizar totales basado en productos filtrados
+  totalRegistros.value = productosFiltrados.value.length
+  totalPaginas.value = Math.ceil(productosFiltrados.value.length / tamanoPagina)
+  
+  return productosFiltrados.value.slice(inicio, fin)
+})
+
+const actualizarPaginacion = () => {
+  paginaActual.value = 0
+}
+
 const handleSearch = (query) => {
   busqueda.value = query
+  paginaActual.value = 0
 }
 
 const alternarOrdenStock = () => {
@@ -256,6 +283,7 @@ const alternarOrdenStock = () => {
   } else {
     ordenStock.value = null
   }
+  paginaActual.value = 0
 }
 
 const alternarOrdenPrecio = () => {
@@ -266,6 +294,7 @@ const alternarOrdenPrecio = () => {
   } else {
     ordenPrecio.value = null
   }
+  paginaActual.value = 0
 }
 
 const obtenerNombreCategoria = (idCategoria) => {
@@ -276,13 +305,12 @@ const obtenerNombreCategoria = (idCategoria) => {
 const cargarProductos = async () => {
   cargando.value = true
   try {
-    const resultado = await productosService.obtenerConPaginacion(0, tamanoPagina)
+    const resultado = await productosService.obtenerTodos()
     
     if (resultado.success) {
       productosCompletos.value = resultado.data || []
-      paginaActual.value = resultado.paginaActual
-      totalPaginas.value = resultado.totalPaginas
-      totalRegistros.value = resultado.totalRegistros
+      paginaActual.value = 0
+      actualizarPaginacion()
     } else {
       toast.add({
         severity: 'error',
@@ -303,25 +331,9 @@ const cargarProductos = async () => {
 }
 
 const cargarPagina = async (numeroPagina) => {
-  cargando.value = true
-  try {
-    const resultado = await productosService.obtenerConPaginacion(numeroPagina, tamanoPagina)
-    
-    if (resultado.success) {
-      productosCompletos.value = resultado.data || []
-      paginaActual.value = resultado.paginaActual
-      totalPaginas.value = resultado.totalPaginas
-      totalRegistros.value = resultado.totalRegistros
-    }
-  } catch (error) {
-    toast.add({
-      severity: 'error',
-      summary: 'Error',
-      detail: 'Error al cargar la página',
-      life: 3000
-    })
+  if (numeroPagina >= 0 && numeroPagina < totalPaginas.value) {
+    paginaActual.value = numeroPagina
   }
-  cargando.value = false
 }
 
 const irPaginaSiguiente = async () => {
