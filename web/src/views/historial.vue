@@ -35,7 +35,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import FiltrosHistorial from '../components/FiltrosHistorial.vue'
 import ListadoHistorial from '../components/ListadoHistorial.vue'
 import EstadisticasHistorial from '../components/EstadisticasHistorial.vue'
@@ -43,6 +43,7 @@ import Paginador from '../components/Paginador.vue'
 import { useHistorial } from '../composables/useHistorial'
 
 const { 
+  movimientosCompletos,
   movimientos, 
   productos, 
   cargando, 
@@ -64,8 +65,9 @@ const filtros = ref({
   fecha_fin: ''
 })
 
-const movimientosFiltrados = computed(() => {
-  let resultado = movimientos.value
+// Computed para movimientos filtrados (todos, sin paginación)
+const movimientosFiltradosSinPaginar = computed(() => {
+  let resultado = movimientosCompletos.value
 
   if (filtros.value.id_producto) {
     resultado = resultado.filter((mov) => Number(mov.id_producto) === Number(filtros.value.id_producto))
@@ -88,9 +90,27 @@ const movimientosFiltrados = computed(() => {
   return resultado
 })
 
+// Computed para movimientos filtrados Y paginados
+const movimientosFiltrados = computed(() => {
+  const inicio = paginaActual.value * tamanoPagina
+  const fin = inicio + tamanoPagina
+  
+  // Actualizar totales basado en movimientos filtrados
+  totalRegistros.value = movimientosFiltradosSinPaginar.value.length
+  totalPaginas.value = Math.ceil(movimientosFiltradosSinPaginar.value.length / tamanoPagina)
+  
+  return movimientosFiltradosSinPaginar.value.slice(inicio, fin)
+})
+
 const actualizarFiltros = (nuevosFiltros) => {
   filtros.value = nuevosFiltros
+  paginaActual.value = 0
 }
+
+// Watcher para resetear página cuando cambian los filtros
+watch(() => filtros.value, () => {
+  paginaActual.value = 0
+}, { deep: true })
 
 onMounted(() => {
   cargarHistorial()
