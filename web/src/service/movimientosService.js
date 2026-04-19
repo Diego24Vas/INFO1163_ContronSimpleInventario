@@ -38,16 +38,39 @@ export const movimientosService = {
     }
   },
 
-  // READ - Obtener todos los movimientos
+  // READ - Obtener todos los movimientos (cargando iterativamente para evitar límite de 1000)
   async obtenerTodos() {
     try {
-      const { data, error } = await supabase
-        .from(TABLE_NAME)
-        .select('*')
-        .order('fecha_hora', { ascending: false });
-      
-      if (error) throw error;
-      return { success: true, data };
+      let todosDatos = [];
+      let pagina = 0;
+      const tamanoPagina = 1000;
+      let hayMas = true;
+
+      while (hayMas) {
+        const desde = pagina * tamanoPagina;
+        const hasta = desde + tamanoPagina - 1;
+        
+        const { data, error } = await supabase
+          .from(TABLE_NAME)
+          .select('*')
+          .order('fecha_hora', { ascending: false })
+          .range(desde, hasta);
+        
+        if (error) throw error;
+        
+        if (!data || data.length === 0) {
+          hayMas = false;
+        } else {
+          todosDatos = todosDatos.concat(data);
+          if (data.length < tamanoPagina) {
+            hayMas = false;
+          } else {
+            pagina++;
+          }
+        }
+      }
+
+      return { success: true, data: todosDatos };
     } catch (error) {
       return { success: false, error: error.message };
     }
