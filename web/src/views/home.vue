@@ -402,7 +402,7 @@ const confirmarAgregar = async () => {
     toast.add({
       severity: 'success',
       summary: 'Stock agregado',
-      detail: `Se agregaron ${cantidadModal.value} unidades. El movimiento fue registrado en el historial.`,
+      detail: 'Se agregó stock. El movimiento fue registrado en el historial.',
       life: 3000
     })
   } else {
@@ -451,7 +451,7 @@ const confirmarEliminar = async () => {
     toast.add({
       severity: 'success',
       summary: 'Stock reducido',
-      detail: `Se eliminaron ${cantidadModal.value} unidades. El movimiento fue registrado en el historial.`,
+      detail: 'Se retiraron productos. El movimiento fue registrado en el historial.',
       life: 3000
     })
   } else {
